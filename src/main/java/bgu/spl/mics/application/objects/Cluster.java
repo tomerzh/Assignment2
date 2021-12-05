@@ -13,12 +13,12 @@ import java.util.Collection;
  */
 public class Cluster {
 
-	private static Cluster instance = new Cluster();
+	private static Cluster instance;
 	private Collection<GPU> gpus;
 	private Collection<CPU> cpus;
 
 	private Cluster(){
-
+		instance = new Cluster();
 	}
 
 	/**
