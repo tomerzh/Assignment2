@@ -17,6 +17,8 @@ public interface MessageBus {
      * @param <T>  The type of the result expected by the completed event.
      * @param type The type to subscribe to,
      * @param m    The subscribing micro-service.
+     * @pre !(eventToServices.get(type).contain(m))
+     * @post eventToServices.get(type).contain(m)
      */
     <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m);
 
@@ -25,6 +27,8 @@ public interface MessageBus {
      * <p>
      * @param type 	The type to subscribe to.
      * @param m    	The subscribing micro-service.
+     * @pre !(broadcastToServices.get(type).contain(m))
+     * @post broadcastToServices.get(type).contain(m)
      */
     void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m);
 
@@ -37,6 +41,8 @@ public interface MessageBus {
      * @param <T>    The type of the result expected by the completed event.
      * @param e      The completed event.
      * @param result The resolved result of the completed event.
+     * @pre !(future.isDone()), future.get(time, timeUnit) == null.
+     * @post future.isDone(), future.get == result.
      */
     <T> void complete(Event<T> e, T result);
 
@@ -45,6 +51,8 @@ public interface MessageBus {
      * micro-services subscribed to {@code b.getClass()}.
      * <p>
      * @param b 	The message to added to the queues.
+     * @pre for each ms : broadcastToService.get(b) , !(ms.Queue.contains(b))
+     * @post for each ms : broadcastToService.get(b) , ms.Queue.peek() = b
      */
     void sendBroadcast(Broadcast b);
 
@@ -57,6 +65,8 @@ public interface MessageBus {
      * @param e     	The event to add to the queue.
      * @return {@link Future<T>} object to be resolved once the processing is complete,
      * 	       null in case no micro-service has subscribed to {@code e.getClass()}.
+     * @pre for each ms : eventToService.get(e) , !(ms.Queue.contains(e))
+     * @post for each ms : eventToService.get(e) , ms.Queue.peek() = e
      */
     <T> Future<T> sendEvent(Event<T> e);
 
@@ -64,6 +74,8 @@ public interface MessageBus {
      * Allocates a message-queue for the {@link MicroService} {@code m}.
      * <p>
      * @param m the micro-service to create a queue for.
+     * @pre !(allMicroServices.get(m)) , microServiceToQueue.get(m) == null
+     * @post allMicroServices.get(m) , microServiceToQueue.get(m) == queue of m
      */
     void register(MicroService m);
 
@@ -74,6 +86,8 @@ public interface MessageBus {
      * registered, nothing should happen.
      * <p>
      * @param m the micro-service to unregister.
+     * @pre allMicroServices.get(m) , microServiceToQueue.get(m) == queue of m
+     * @post !(allMicroServices.get(m)) , microServiceToQueue.get(m) == null
      */
     void unregister(MicroService m);
 
@@ -91,6 +105,8 @@ public interface MessageBus {
      * @return The next message in the {@code m}'s queue (blocking).
      * @throws InterruptedException if interrupted while waiting for a message
      *                              to became available.
+     * @pre serviceToQueue.get(m).size >= 0
+     * @post if(@pre>0):serviceToQueue.get(m).size = @pre(serviceToQueue.get(m).size) - 1
      */
     Message awaitMessage(MicroService m) throws InterruptedException;
     
