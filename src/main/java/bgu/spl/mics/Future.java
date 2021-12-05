@@ -11,12 +11,17 @@ import java.util.concurrent.TimeUnit;
  * No public constructor is allowed except for the empty constructor.
  */
 public class Future<T> {
+
+	//added fields
+	private T result;
+	private boolean done;
 	
 	/**
 	 * This should be the the only public constructor in this class.
 	 */
 	public Future() {
 		//TODO: implement this
+		//done - false, result - null
 	}
 	
 	/**
@@ -34,6 +39,8 @@ public class Future<T> {
 	
 	/**
      * Resolves the result of this Future object.
+	 * @pre result == null
+	 * @post result == result
      */
 	public void resolve (T result) {
 		//TODO: implement this.
