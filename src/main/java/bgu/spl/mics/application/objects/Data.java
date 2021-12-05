@@ -5,6 +5,7 @@ package bgu.spl.mics.application.objects;
  * Add fields and methods to this class as you see fit (including public methods and constructors).
  */
 public class Data {
+
     /**
      * Enum representing the Data type.
      */
@@ -15,4 +16,10 @@ public class Data {
     private Type type;
     private int processed;
     private int size;
+
+    public Data(Type type, int size){
+        this.type = type;
+        processed = 0;
+        this.size = size;
+    }
 }
