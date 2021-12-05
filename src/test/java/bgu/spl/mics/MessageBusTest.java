@@ -1,9 +1,8 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.application.messages.PublishConferenceBroadcast;
+import bgu.spl.mics.application.messages.TestModelEvent;
 import bgu.spl.mics.application.services.CPUService;
-import bgu.spl.mics.example.services.ExampleBroadcastListenerService;
-import bgu.spl.mics.example.services.ExampleEventHandlerService;
-import bgu.spl.mics.example.services.ExampleMessageSenderService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
