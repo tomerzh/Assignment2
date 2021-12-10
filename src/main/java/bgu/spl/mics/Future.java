@@ -1,5 +1,6 @@
 package bgu.spl.mics;
 
+import java.sql.Time;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -20,8 +21,8 @@ public class Future<T> {
 	 * This should be the the only public constructor in this class.
 	 */
 	public Future() {
-		//TODO: implement this
-		//done - false, result - null
+		result = null;
+		done = false;
 	}
 	
 	/**
@@ -32,9 +33,13 @@ public class Future<T> {
      * @return return the result of type T if it is available, if not wait until it is available.
      * 	       
      */
-	public T get() {
-		//TODO: implement this.
-		return null;
+	public synchronized T get() {
+		while(result == null){
+			try{
+				this.wait();
+			}catch(InterruptedException ex){}
+		}
+		return result;
 	}
 	
 	/**
@@ -42,16 +47,17 @@ public class Future<T> {
 	 * @pre result == null
 	 * @post result == result
      */
-	public void resolve (T result) {
-		//TODO: implement this.
+	public synchronized void resolve (T result) {
+		this.result = result;
+		done = true;
+		this.notifyAll();
 	}
 	
 	/**
      * @return true if this object has been resolved, false otherwise
      */
 	public boolean isDone() {
-		//TODO: implement this.
-		return false;
+		return done;
 	}
 	
 	/**
@@ -66,8 +72,10 @@ public class Future<T> {
      *         elapsed, return null.
      */
 	public T get(long timeout, TimeUnit unit) {
-		//TODO: implement this.
-		return null;
-	}
+		try{
+			Thread.sleep(timeout);
+		}catch(InterruptedException ex){}
+		return result;
+	} // to do!!
 
 }
