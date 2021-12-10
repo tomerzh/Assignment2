@@ -1,4 +1,6 @@
 package bgu.spl.mics;
+import bgu.spl.mics.application.objects.Cluster;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Queue;
@@ -10,6 +12,7 @@ import java.util.Queue;
  */
 public class MessageBusImpl implements MessageBus {
 
+	private static MessageBusImpl instance;
 	private HashMap<Class<? extends Event>, HashSet<MicroService>> eventToServices;
 	private HashMap<Class<? extends Broadcast>, HashSet<MicroService>> broadcastToService;
 	private HashMap<MicroService, Queue<Message>> serviceToWorkQueue;
@@ -17,6 +20,13 @@ public class MessageBusImpl implements MessageBus {
 	private HashSet<MicroService> allMicroServices; //add mc here, only after mc got queue
 
 	//"is it there?" added functions
+
+	private MessageBusImpl(){
+		instance = new MessageBusImpl();
+	}
+	public static MessageBusImpl getInstance() {
+		return instance;
+	}
 
 	public boolean isSubscribeToEvent(Class<? extends Event> event, MicroService ms){
 		return this.eventToServices.get(event).contains(ms);

@@ -17,7 +17,7 @@ public class MessageBusTest {
 
     @Before
     public void setUp() throws Exception {
-        messageBus = new MessageBusImpl();
+        messageBus = MessageBusImpl.getInstance();
         service = new CPUService("test");
     }
 

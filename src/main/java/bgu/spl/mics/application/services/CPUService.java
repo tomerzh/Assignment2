@@ -11,13 +11,12 @@ import bgu.spl.mics.MicroService;
  */
 public class CPUService extends MicroService {
     public CPUService(String name) {
-        super("Change_This_Name");
+        super(name);
         // TODO Implement this
     }
 
     @Override
     protected void initialize() {
         // TODO Implement this
-
     }
 }
