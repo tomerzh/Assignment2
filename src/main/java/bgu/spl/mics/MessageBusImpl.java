@@ -1,10 +1,11 @@
 package bgu.spl.mics;
-import bgu.spl.mics.application.messages.TrainModelEvent;
-import bgu.spl.mics.application.objects.Cluster;
+
+import bgu.spl.mics.application.messages.TestModelEvent;
+import bgu.spl.mics.application.messages.TickBroadcast;
 
 import java.util.*;
-import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
@@ -20,9 +21,8 @@ public class MessageBusImpl implements MessageBus {
 
 	private HashMap<Class<? extends Event>, LinkedList<MicroService>> eventToServices;
 	private HashMap<Class<? extends Broadcast>, HashSet<MicroService>> broadcastToService;
-	private HashMap<MicroService, BlockingQueue<Message>> serviceToWorkQueue;
-	private HashMap<MicroService, HashSet<Future>> serviceToFutures; //check if needed
-	private HashSet<MicroService> allMicroServices; //check if needed
+	private HashMap<MicroService, LinkedBlockingQueue<Message>> serviceToWorkQueue;
+	private HashMap<Event<?>, Future<?>> eventToFuture;
 	private Iterator<MicroService> trainIterator;
 	private Iterator<MicroService> testIterator;
 	private Iterator<MicroService> publishIterator;
@@ -30,9 +30,8 @@ public class MessageBusImpl implements MessageBus {
 	private MessageBusImpl(){
 		eventToServices = new HashMap<Class<? extends Event>, LinkedList<MicroService>>();
 		broadcastToService = new HashMap<Class<? extends Broadcast>, HashSet<MicroService>>();
-		serviceToWorkQueue = new HashMap<MicroService, BlockingQueue<Message>>();
-		serviceToFutures = new HashMap<MicroService, HashSet<Future>>(); // check if needed
-		allMicroServices = new HashSet<MicroService>();//check if needed
+		serviceToWorkQueue = new HashMap<MicroService, LinkedBlockingQueue<Message>>();
+		eventToFuture = new HashMap<Event<?>, Future<?>>();
 		trainIterator = null;
 		testIterator = null;
 		publishIterator = null;
@@ -51,10 +50,7 @@ public class MessageBusImpl implements MessageBus {
 				if(!eventToServices.containsKey(type)){
 					LinkedList<MicroService> eventList = (LinkedList<MicroService>) Collections.synchronizedList(new LinkedList<MicroService>());
 					eventToServices.put(type, eventList);
-					if(type.equals(TrainModelEvent.class)){
-
-
-					}
+					// need to add iterator
 				}
 			}
 		}
@@ -82,9 +78,10 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public <T> void complete(Event<T> e, T result) {
-		// TODO Auto-generated method stub
-
-	}
+//		synchronized (eventToFuture){
+//			eventToFuture.get(e).resolve(result);
+		}
+//	}
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
@@ -98,19 +95,49 @@ public class MessageBusImpl implements MessageBus {
 	
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-
+		//to do!
+		// if service not found, should send null
+		//future need to be add to futures set, need to take his key
 		return null;
 	}
 
 	@Override
 	public void register(MicroService m) {
-		// TODO Auto-generated method stub
-
+		LinkedBlockingQueue<Message> mWorkQueue = new LinkedBlockingQueue<Message>();
+		synchronized (serviceToWorkQueue){
+			serviceToWorkQueue.put(m, mWorkQueue);
+		}
 	}
 
 	@Override
 	public void unregister(MicroService m) {
-		// TODO Auto-generated method stub
+		synchronized (serviceToWorkQueue.get(m)){
+			//remove ms from event lists
+			synchronized (eventToServices){
+				for(LinkedList<MicroService> eventList : eventToServices.values()){
+					if(eventList.contains(m)){
+						eventList.remove(m);
+					}
+				}
+			}
+			//remove ms from event sets
+			synchronized (broadcastToService){
+				for(HashSet<MicroService> bcSet : broadcastToService.values()){
+					if(bcSet.contains(m)){
+						bcSet.remove(m);
+					}
+				}
+			}
+
+			//sends back to messageBus remain messages
+			for(Message ms : serviceToWorkQueue.get(m)){
+				//to do - send back to bus the events
+				// also - need to delete the queue
+			}
+
+
+		}
+
 
 	}
 
@@ -134,12 +161,8 @@ public class MessageBusImpl implements MessageBus {
 		return this.serviceToWorkQueue.get(ms).contains(msg);
 	}
 
-	public boolean isInServiceFutures(MicroService ms, Message msg){
-		return this.serviceToFutures.get(ms).contains(msg);
-	}
-
 	public boolean isInAllMicroServices(MicroService ms){
-		return this.allMicroServices.contains(ms);
+		return this.serviceToWorkQueue.containsKey(ms);
 	}
 
 }
