@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.objects.GPU;
 
 /**
  * GPU service is responsible for handling the
@@ -13,9 +14,10 @@ import bgu.spl.mics.MicroService;
  */
 public class GPUService extends MicroService {
 
-    public GPUService(String name) {
+    private GPU gpu;
+    public GPUService(String name, GPU gpu) {
         super(name);
-        // TODO Implement this
+        this.gpu = gpu;
     }
 
     @Override

@@ -9,10 +9,13 @@ import java.util.LinkedList;
  * Add fields and methods to this class as you see fit (including public methods and constructors).
  */
 public class CPU {
-    private int cores;
-    private Collection<DataBatch> data;
+    private final int cores;
     private DataBatch currDataProcessing;
-    private Cluster cluster;
+    private int currDataProcessingTime;
+    private int totalTimeTicks;
+    private int currDataStartTime;
+    private boolean availableToProcess;
+    private final Cluster cluster;
 
     /**
      * public constructor
@@ -21,7 +24,6 @@ public class CPU {
     public CPU(int cores){
         this.cores = cores;
         cluster = Cluster.getInstance();
-        data = new LinkedList<DataBatch>();
     }
 
     /**
@@ -34,51 +36,35 @@ public class CPU {
 
     /**
      *
-     * @return data the CPU is currently processing.
-     */
-    public Collection getData(){
-        return data;
-    }
-
-    /**
-     * @pre: isFree() == true
-     * @post: data.size() = @pre data.size() + 1
-     * @param dataBatch the DataBatch added to the collection for the cpu to process.
-     * @return true if the data is added successfully, false otherwise.
-     */
-    public boolean processData(DataBatch dataBatch){
-        if (isFree()){
-            currDataProcessing = dataBatch;
-            return data.add(dataBatch);
-        }
-        return false;
-    }
-
-    /**
-     * @pre: isFree() == false
-     * @post: data.size() = @pre data.size() - 1
-     * @return true if data is not empty and removed DataBatch, false otherwise.
-     */
-    public boolean finishedProcessData(){
-        if (!isFree()){
-            return data.remove(currDataProcessing);
-        }
-        return false;
-    }
-
-    /**
-     *
      * @return the instance of the singleton cluster.
      */
     public Cluster getCluster(){
         return cluster;
     }
 
-    /**
-     *
-     * @return true if the cpu is not processing any data, false otherwise.
-     */
-    public boolean isFree(){
-        return data.isEmpty();
+    public void fetchUnprocessedData(){
+        currDataProcessing = cluster.dataBatchToCpu();
+        currDataStartTime = totalTimeTicks;
+        availableToProcess = false;
+        switch (currDataProcessing.getType()){
+            case Images:
+                currDataProcessingTime = (32/cores) * 4;
+                break;
+            case Text:
+                currDataProcessingTime = (32/cores) * 2;
+                break;
+            case Tabular:
+                currDataProcessingTime = (32/cores);
+                break;
+        }
+    }
+
+    public void pushProcessedData(){
+        cluster.sendDataFromCpu(currDataProcessing);
+        availableToProcess = true;
+    }
+
+    public boolean isProcessDataDone(){
+        return (totalTimeTicks - currDataStartTime) == currDataProcessingTime;
     }
 }
