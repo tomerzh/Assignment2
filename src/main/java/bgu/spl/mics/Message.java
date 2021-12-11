@@ -1,5 +1,7 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.MessageBus;
+
 /**
  * A message is a data-object which is passed between micro-services as a means
  * of communication. The Message interface is a "Marker" interface which means
