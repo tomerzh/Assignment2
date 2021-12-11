@@ -1,9 +1,10 @@
 package bgu.spl.mics;
+import bgu.spl.mics.application.messages.TrainModelEvent;
 import bgu.spl.mics.application.objects.Cluster;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Queue;
+import java.util.*;
+import java.util.concurrent.BlockingDeque;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * The {@link MessageBusImpl class is the implementation of the MessageBus interface.
@@ -12,54 +13,71 @@ import java.util.Queue;
  */
 public class MessageBusImpl implements MessageBus {
 
-	private static MessageBusImpl instance;
-	private HashMap<Class<? extends Event>, HashSet<MicroService>> eventToServices;
-	private HashMap<Class<? extends Broadcast>, HashSet<MicroService>> broadcastToService;
-	private HashMap<MicroService, Queue<Message>> serviceToWorkQueue;
-	private HashMap<MicroService, HashSet<Future>> serviceToFutures;
-	private HashSet<MicroService> allMicroServices; //add mc here, only after mc got queue
+	//thread safe singleton design
+	private static class MessageBusHolder{
+		private static MessageBusImpl MessageBusInstance = new MessageBusImpl();
+	}
 
-	//"is it there?" added functions
+	private HashMap<Class<? extends Event>, LinkedList<MicroService>> eventToServices;
+	private HashMap<Class<? extends Broadcast>, HashSet<MicroService>> broadcastToService;
+	private HashMap<MicroService, BlockingQueue<Message>> serviceToWorkQueue;
+	private HashMap<MicroService, HashSet<Future>> serviceToFutures; //check if needed
+	private HashSet<MicroService> allMicroServices; //check if needed
+	private Iterator<MicroService> trainIterator;
+	private Iterator<MicroService> testIterator;
+	private Iterator<MicroService> publishIterator;
 
 	private MessageBusImpl(){
-		instance = new MessageBusImpl();
+		eventToServices = new HashMap<Class<? extends Event>, LinkedList<MicroService>>();
+		broadcastToService = new HashMap<Class<? extends Broadcast>, HashSet<MicroService>>();
+		serviceToWorkQueue = new HashMap<MicroService, BlockingQueue<Message>>();
+		serviceToFutures = new HashMap<MicroService, HashSet<Future>>(); // check if needed
+		allMicroServices = new HashSet<MicroService>();//check if needed
+		trainIterator = null;
+		testIterator = null;
+		publishIterator = null;
 	}
+
 	public static MessageBusImpl getInstance() {
-		return instance;
+		return MessageBusHolder.MessageBusInstance;
 	}
 
-	public boolean isSubscribeToEvent(Class<? extends Event> event, MicroService ms){
-		return this.eventToServices.get(event).contains(ms);
-	}
-
-	public boolean isSubscribeToBroadCast(Class<? extends Broadcast> broadcast, MicroService ms){
-		return this.broadcastToService.get(broadcast).contains(ms);
-	}
-
-	public boolean isInServiceQueue(MicroService ms, Message msg){
-		return this.serviceToWorkQueue.get(ms).contains(msg);
-	}
-
-	public boolean isInServiceFutures(MicroService ms, Message msg){
-		return this.serviceToFutures.get(ms).contains(msg);
-	}
-
-	public boolean isInAllMicroServices(MicroService ms){
-		return this.allMicroServices.contains(ms);
-	}
-
-
+	// MessageBus methods
 
 	@Override
 	public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-		// TODO Auto-generated method stub
+		if(!eventToServices.containsKey(type)){
+			synchronized (eventToServices){
+				if(!eventToServices.containsKey(type)){
+					LinkedList<MicroService> eventList = (LinkedList<MicroService>) Collections.synchronizedList(new LinkedList<MicroService>());
+					eventToServices.put(type, eventList);
+					if(type.equals(TrainModelEvent.class)){
 
+
+					}
+				}
+			}
+		}
+
+		synchronized (eventToServices.get(type)){
+			eventToServices.get(type).add(m);
+		}
 	}
 
 	@Override
 	public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-		// TODO Auto-generated method stub
+		if(!broadcastToService.containsKey(type)){
+			synchronized (broadcastToService){
+				if(!broadcastToService.containsKey(type)){
+					HashSet<MicroService> bcSet = (HashSet<MicroService>) Collections.synchronizedSet(new HashSet<MicroService>());
+					broadcastToService.put(type, bcSet);
+				}
+			}
+		}
 
+		synchronized (broadcastToService.get(type)){
+			broadcastToService.get(type).add(m);
+		}
 	}
 
 	@Override
@@ -70,14 +88,17 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		// TODO Auto-generated method stub
-
+		synchronized (broadcastToService.get(b)){
+			for(MicroService mc : broadcastToService.get(b)){
+				serviceToWorkQueue.get(mc).add(b);
+			}
+		}
 	}
 
 	
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		// TODO Auto-generated method stub
+
 		return null;
 	}
 
@@ -99,6 +120,26 @@ public class MessageBusImpl implements MessageBus {
 		return null;
 	}
 
-	
+	//"is it there?" added functions
+
+	public boolean isSubscribeToEvent(Class<? extends Event> event, MicroService ms){
+		return this.eventToServices.get(event).contains(ms);
+	}
+
+	public boolean isSubscribeToBroadCast(Class<? extends Broadcast> broadcast, MicroService ms){
+		return this.broadcastToService.get(broadcast).contains(ms);
+	}
+
+	public boolean isInServiceQueue(MicroService ms, Message msg){
+		return this.serviceToWorkQueue.get(ms).contains(msg);
+	}
+
+	public boolean isInServiceFutures(MicroService ms, Message msg){
+		return this.serviceToFutures.get(ms).contains(msg);
+	}
+
+	public boolean isInAllMicroServices(MicroService ms){
+		return this.allMicroServices.contains(ms);
+	}
 
 }
