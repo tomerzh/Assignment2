@@ -1,8 +1,11 @@
 package bgu.spl.mics.application.objects;
 
 
-import java.awt.*;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 /**
  * Passive object representing the cluster.
@@ -14,11 +17,23 @@ import java.util.Collection;
 public class Cluster {
 
 	private static Cluster instance;
-	private Collection<GPU> gpus;
+	private HashMap<GPU, BlockingQueue<DataBatch>> gpus;
 	private Collection<CPU> cpus;
+	private BlockingQueue<DataBatch> unprocessedData;
+	private Collection<String> namesModelsTrained;
+	private Object lockModelsName = new Object();
+
+	private int totalDataProcessed;
+	private int cpuTimeUsed;
+	private int gpuTimeUsed;
 
 	private Cluster(){
+
 		instance = new Cluster();
+		unprocessedData = new LinkedBlockingQueue<>();
+		gpus = new HashMap<GPU, BlockingQueue<DataBatch>>();
+		cpus = new LinkedList<>();
+		namesModelsTrained = new LinkedList<>();
 	}
 
 	/**
@@ -28,4 +43,37 @@ public class Cluster {
 		return instance;
 	}
 
+	public void addGpu(GPU gpu){
+		gpus.put(gpu, new LinkedBlockingQueue<>());
+	}
+
+	public BlockingQueue<DataBatch> getGpuQueue(GPU gpu){
+		return gpus.get(gpu);
+	}
+
+	public void addCpu(CPU cpu){
+		cpus.add(cpu);
+	}
+
+	public void addModelTrained(String model){
+		synchronized (lockModelsName){
+			namesModelsTrained.add(model);
+		}
+	}
+
+	public void sendDataFromGpu(DataBatch data){
+		unprocessedData.add(data);
+	}
+
+	public void sendDataFromCpu(DataBatch data){
+		try{
+			getGpuQueue(data.getGpuOrigin()).put(data);
+		}catch (InterruptedException exception){}
+	}
+
+	public DataBatch dataBatchToCpu(){ //not sure about this
+		try{
+			return unprocessedData.take();
+		}catch (InterruptedException exception){return null;}
+	}
 }

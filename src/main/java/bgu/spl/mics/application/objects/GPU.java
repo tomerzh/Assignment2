@@ -1,6 +1,10 @@
 package bgu.spl.mics.application.objects;
 
 
+import java.util.Collection;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
+
 /**
  * Passive object representing a single GPU.
  * Add all the fields described in the assignment as private fields.
@@ -18,6 +22,13 @@ public class GPU {
     private final Cluster cluster;
     private int numberOfBatchesAvailable;
     private boolean workingOnModel;
+    private BlockingQueue<DataBatch> unProcessedData;
+    private BlockingQueue<DataBatch> processedData;
+
+    private DataBatch currDataProcessing;
+    private int dataProcessingTime;
+    private int totalTimeTicks;
+    private int currDataStartTime;
 
     /**
      * public constructor
@@ -26,17 +37,22 @@ public class GPU {
         //type from json file
         this.type = type;
         workingOnModel = false;
+        unProcessedData = new LinkedBlockingQueue<>();
+        processedData = new LinkedBlockingQueue<>();
         cluster = Cluster.getInstance();
 
         switch(getType()){ //capacity of the GPU depends on type.
             case RTX3090:
                 numberOfBatchesAvailable = 32;
+                dataProcessingTime = 1;
                 break;
             case RTX2080:
                 numberOfBatchesAvailable = 16;
+                dataProcessingTime = 2;
                 break;
             case GTX1080:
                 numberOfBatchesAvailable = 8;
+                dataProcessingTime = 4;
                 break;
         }
     }
@@ -55,6 +71,10 @@ public class GPU {
      */
     public Model getModel(){
         return model;
+    }
+
+    public Data getData(){
+        return data;
     }
 
     /**
@@ -77,6 +97,10 @@ public class GPU {
         return numberOfBatchesAvailable > 0;
     }
 
+    public boolean isProcessedDataEmpty(){
+        return processedData.isEmpty();
+    }
+
     /**
      * @pre: workingOnModel == false
      * @param model the new model the GPU is working on.
@@ -92,13 +116,49 @@ public class GPU {
     /**
      * this method takes the data and splits it into data batches of 1000 samples each.
      */
-//    public void splitToDataBatches(){
-//
-//    }
-//
-//    public DataBatch pushDataToProcess(){
-//        if(availableProcessedBatch()){
-//
-//        }
-//    }
+    public void splitToDataBatches(){
+        for(int i = 1; i < data.getSize(); i = i + 1000){
+            DataBatch dataBatch = new DataBatch(data, i, this);
+            unProcessedData.add(dataBatch);
+        }
+    }
+
+    public void pushDataToProcess(DataBatch dataBatch){
+        cluster.sendDataFromGpu(dataBatch);
+    }
+
+    public void fetchProcessedData(){
+        if(cluster.getGpuQueue(this).peek() != null){
+            try{
+                DataBatch dataBatch = cluster.getGpuQueue(this).take();
+                processedData.add(dataBatch);
+                numberOfBatchesAvailable--;
+            }catch (InterruptedException exception){}
+        }
+    }
+
+    public void processDataBatch(){
+        if(!isProcessedDataEmpty()){
+            try{
+                currDataProcessing = processedData.take();
+                currDataStartTime = totalTimeTicks;
+            }catch (InterruptedException exception){}
+        }
+    }
+
+    public void finishProcessingDataBatch(){
+        numberOfBatchesAvailable++;
+        data.incrementProcessedData();
+    }
+
+    public void finishTrainModelEvent(){
+        workingOnModel = false;
+        unProcessedData.clear();
+        processedData.clear();
+        currDataProcessing = null;
+    }
+
+    public boolean isProcessDataDone(){
+        return (totalTimeTicks - currDataStartTime) == dataProcessingTime;
+    }
 }

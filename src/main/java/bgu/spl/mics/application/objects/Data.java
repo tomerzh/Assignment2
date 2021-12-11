@@ -22,4 +22,20 @@ public class Data {
         processed = 0;
         this.size = size;
     }
+
+    public Type getType(){
+        return type;
+    }
+
+    public int getSize(){
+        return size;
+    }
+
+    public void incrementProcessedData(){
+        processed++;
+    }
+
+    public boolean isDataFinishedProcessing(){
+        return processed==(size/1000);
+    }
 }

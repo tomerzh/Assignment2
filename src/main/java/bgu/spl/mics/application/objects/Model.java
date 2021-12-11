@@ -21,8 +21,12 @@ public class Model {
     private Status status;
     private Results results;
 
-    public Model(){
-
+    public Model(Student student, String name, Data.Type type, int size){
+        this.student = student;
+        this.name = name;
+        data = new Data(type, size);
+        status = Status.PreTrained;
+        results = Results.None;
     }
 
     public Data getData(){
