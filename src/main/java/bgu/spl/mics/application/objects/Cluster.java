@@ -16,7 +16,7 @@ import java.util.concurrent.LinkedBlockingQueue;
  */
 public class Cluster {
 
-	private static Cluster instance;
+	private static Cluster instance = new Cluster();
 	private HashMap<GPU, BlockingQueue<DataBatch>> gpus;
 	private Collection<CPU> cpus;
 	private BlockingQueue<DataBatch> unprocessedData;
@@ -28,8 +28,6 @@ public class Cluster {
 	private int gpuTimeUsed;
 
 	private Cluster(){
-
-		instance = new Cluster();
 		unprocessedData = new LinkedBlockingQueue<>();
 		gpus = new HashMap<GPU, BlockingQueue<DataBatch>>();
 		cpus = new LinkedList<>();
