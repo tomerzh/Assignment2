@@ -16,6 +16,7 @@ public class CRMSRunner {
             Gson gson = new Gson();
             JsonReader reader = new JsonReader(new FileReader("example_input.json"));
             JsonRead data = gson.fromJson(reader, JsonRead.class);
+            System.out.println("Hello");
         }catch (FileNotFoundException exception){}
 
     }
