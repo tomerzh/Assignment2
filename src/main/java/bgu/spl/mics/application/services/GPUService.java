@@ -27,7 +27,7 @@ public class GPUService extends MicroService {
 
     @Override
     protected void initialize() {
-        subscribeEvent(TrainModelEvent.class, (trainModelEvent)->{
+        subscribeEvent(TrainModelEvent.class, trainModelEvent->{
             gpu.insertModel(trainModelEvent.getModel());
             gpu.splitToDataBatches();
             while(!gpu.getData().isDataFinishedProcessing()){
@@ -39,10 +39,10 @@ public class GPUService extends MicroService {
                 }
             }
         });
-        subscribeEvent(TestModelEvent.class, (testModelEvent)->{
+        subscribeEvent(TestModelEvent.class, testModelEvent->{
 
         });
-        subscribeBroadcast(TickBroadcast.class, (tick)->{
+        subscribeBroadcast(TickBroadcast.class, tick->{
             gpu.incrementTotalTimeTicks();
             if(gpu.isTrainingModel()){ //if gpu is training model.
                 if(!gpu.getData().isDataFinishedProcessing()){ //training and not finished
