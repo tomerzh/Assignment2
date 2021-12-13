@@ -14,7 +14,7 @@ public class CPU {
     private int currDataProcessingTime;
     private int totalTimeTicks;
     private int currDataStartTime;
-    private boolean availableToProcess;
+    private boolean availableToProcess = true;
     private final Cluster cluster;
 
     /**

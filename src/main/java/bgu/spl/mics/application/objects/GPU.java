@@ -128,7 +128,7 @@ public class GPU {
     }
 
     public void fetchProcessedData(){
-        if(cluster.getGpuQueue(this).peek() != null){
+        if(cluster.getGpuQueue(this).peek() != null){ //thread safe, because every gpu has his own queue.
             try{
                 DataBatch dataBatch = cluster.getGpuQueue(this).take();
                 processedData.add(dataBatch);
