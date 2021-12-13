@@ -67,13 +67,16 @@ public class MessageBusImpl implements MessageBus {
 				if(!broadcastToService.containsKey(type)){
 					HashSet<MicroService> bcSet = (HashSet<MicroService>) Collections.synchronizedSet(new HashSet<MicroService>());
 					broadcastToService.put(type, bcSet);
+					broadcastToService.get(type).add(m);
+					broadcastToService.notifyAll();
 				}
 			}
 		}
 
-		synchronized (broadcastToService.get(type)){
-			broadcastToService.get(type).add(m);
-		}
+			synchronized (broadcastToService.get(type)){
+				broadcastToService.get(type).add(m);
+				broadcastToService.get(type).notifyAll();
+			}
 	}
 
 	@Override
@@ -85,9 +88,29 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		synchronized (broadcastToService.get(b)){
-			for(MicroService mc : broadcastToService.get(b)){
-				serviceToWorkQueue.get(mc).add(b);
+		if(!broadcastToService.containsKey(b.getClass())){
+			synchronized (broadcastToService){
+				while(!broadcastToService.containsKey(b.getClass())){
+					try{
+						broadcastToService.wait();
+					}catch(InterruptedException ex){}
+				}
+				for(MicroService mc : broadcastToService.get(b.getClass())){
+					serviceToWorkQueue.get(mc).add(b);
+				}
+			}
+		}
+
+		if(broadcastToService.get(b.getClass()).isEmpty()){
+			synchronized (broadcastToService.get(b.getClass())){
+				while(!broadcastToService.get(b.getClass()).isEmpty()){
+					try{
+						broadcastToService.get(b.getClass()).wait();
+					}catch(InterruptedException ex){}
+				}
+				for(MicroService mc : broadcastToService.get(b.getClass())){
+					serviceToWorkQueue.get(mc).add(b);
+				}
 			}
 		}
 	}
