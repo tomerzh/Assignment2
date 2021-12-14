@@ -4,6 +4,8 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.LinkedList;
+
 import static org.junit.Assert.*;
 
 public class GPUTest {
@@ -15,7 +17,10 @@ public class GPUTest {
     public void setUp() throws Exception {
         gpu = new GPU(GPU.Type.RTX3090);
         cluster = Cluster.getInstance();
-        model = new Model(new Student(),"Simba", Data.Type.Images, 1000);
+        LinkedList<Model> list = new LinkedList<Model>();
+        Student student = new Student("Simba", "Computer Science", Student.Degree.PhD, list);
+        model = new Model(student, "model1", Data.Type.Images, 1000);
+        list.add(model);
     }
 
     @After

@@ -1,6 +1,9 @@
 package bgu.spl.mics.application.objects;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Vector;
 
 /**
  * Passive object representing information on a conference.
@@ -10,6 +13,25 @@ public class ConfrenceInformation {
 
     private String name;
     private int date;
+    private HashMap<Student, HashSet<Model>> studentToPublishedModels;
+
+    public ConfrenceInformation(String name, int date){
+        this.name = name;
+        this.date = date;
+        studentToPublishedModels = new HashMap<Student, HashSet<Model>>();
+    }
+
+    public void addToPublishHash(Student student, Model modelToAdd){
+        if(!studentToPublishedModels.containsKey(student)){
+            studentToPublishedModels.put(student, new HashSet<Model>());
+        }
+
+        studentToPublishedModels.get(student).add(modelToAdd);
+    }
+
+    public HashMap<Student, HashSet<Model>> getStudentToPublishedModels(){
+        return studentToPublishedModels;
+    }
 
     public String getName() {
         return name;
@@ -27,16 +49,4 @@ public class ConfrenceInformation {
         this.date = date;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        ConfrenceInformation that = (ConfrenceInformation) o;
-        return date == that.date && name.equals(that.name);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(name, date);
-    }
 }
