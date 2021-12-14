@@ -78,8 +78,8 @@ public class MessageBusImpl implements MessageBus {
 	public <T> void complete(Event<T> e, T result) {
 //		synchronized (eventToFuture){
 //			eventToFuture.get(e).resolve(result);
-		}
-//	}
+//		}
+	}
 
 	@Override
 	public void sendBroadcast(Broadcast b) {

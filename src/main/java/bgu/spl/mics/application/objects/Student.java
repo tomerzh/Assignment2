@@ -16,18 +16,18 @@ public class Student {
         MSc, PhD
     }
 
-    private int name;
+    private String name;
     private String department;
     private Degree status;
     private LinkedList<Model> models;
     private int publications;
     private int papersRead;
 
-    public int getName() {
+    public String getName() {
         return name;
     }
 
-    public void setName(int name) {
+    public void setName(String name) {
         this.name = name;
     }
 
@@ -79,10 +79,6 @@ public class Student {
         return name == student.name;
     }
 
-    @Override
-    public int hashCode() {
-        return Objects.hash(name);
-    }
 
     @Override
     public String toString() {
