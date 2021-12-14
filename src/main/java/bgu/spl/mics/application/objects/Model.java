@@ -7,11 +7,11 @@ package bgu.spl.mics.application.objects;
  */
 public class Model {
 
-    enum Status {
+    public enum Status {
         PreTrained, Training, Trained, Tested
     }
 
-    enum Results {
+    public enum Results {
         None, Good, Bad
     }
 
@@ -29,31 +29,26 @@ public class Model {
         results = Results.None;
     }
 
+    public String getName() {
+        return name;
+    }
     public Data getData(){
         return data;
     }
-
     public Status getStatus() {
         return status;
     }
-
-    public void setStatusToTraining() {
-        status = Status.Training;
-    }
-
-    public void setStatusToTrained() {
-        status = Status.Trained;
-    }
-
     public Results getResults() {
         return results;
     }
 
-    public void setResultsToGood() {
-        results = Results.Good;
+    public void setStatus(Status status) {
+        this.status = status;
     }
 
-    public void setResultsToBad() {
-        results = Results.Bad;
+    public void setResults(Results results) {
+        this.results = results;
     }
+
+
 }

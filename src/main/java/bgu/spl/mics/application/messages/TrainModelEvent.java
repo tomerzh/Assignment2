@@ -4,7 +4,6 @@ import bgu.spl.mics.Event;
 import bgu.spl.mics.application.objects.Model;
 
 public class TrainModelEvent implements Event<Model> {
-    String name = "TrainModelEvent";
     private Model model;
 
     public TrainModelEvent(Model model){
@@ -14,9 +13,4 @@ public class TrainModelEvent implements Event<Model> {
     public Model getModel() {
         return model;
     }
-
-    public String getName(){
-        return name;
-    }
-
 }

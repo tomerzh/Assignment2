@@ -23,7 +23,7 @@ public class Cluster {
 	private Collection<String> namesModelsTrained;
 	private Object lockModelsName = new Object();
 
-	private int totalDataProcessed;
+	private int totalDataProcessed = 0;
 	private int cpuTimeUsed;
 	private int gpuTimeUsed;
 
@@ -56,6 +56,12 @@ public class Cluster {
 	public void addModelTrained(String model){
 		synchronized (lockModelsName){
 			namesModelsTrained.add(model);
+		}
+	}
+
+	public void sumAllDataProcessed(){
+		for (CPU cpu: cpus) {
+			totalDataProcessed = totalDataProcessed + cpu.getTotalDataProcessed();
 		}
 	}
 
