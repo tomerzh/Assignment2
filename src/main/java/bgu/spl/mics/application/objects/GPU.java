@@ -1,6 +1,8 @@
 package bgu.spl.mics.application.objects;
 
 import bgu.spl.mics.Event;
+import bgu.spl.mics.application.messages.TestModelEvent;
+import bgu.spl.mics.application.messages.TrainModelEvent;
 
 import java.util.Collection;
 import java.util.LinkedList;
@@ -27,8 +29,8 @@ public class GPU {
     private Queue<DataBatch> unProcessedData;
     private BlockingQueue<DataBatch> processedData;
 
-    private LinkedList<? extends Event> trainModelEvents;
-    private LinkedList<? extends Event> testModelEvents;
+    private LinkedList<TrainModelEvent> trainModelEvents;
+    private LinkedList<TestModelEvent> testModelEvents;
 
     private int numberOfBatchesAvailable; //place available for processed data.
     private DataBatch currDataProcessing;
@@ -190,14 +192,25 @@ public class GPU {
     }
 
     public boolean isProcessDataDone(){
+        if(currDataProcessing == null){
+            return false;
+        }
         return (totalTimeTicks - currDataStartTime) == dataProcessingTime;
     }
 
-    public void runTrainModel(){
-        trainModelEvents.remove();
+    public void addTrainModel(TrainModelEvent trainModel){
+        trainModelEvents.add(trainModel);
     }
 
-    public void runTestModel(){
-        testModelEvents.remove();
+    public TrainModelEvent runTrainModel(){
+        return trainModelEvents.remove();
+    }
+
+    public void addTestModel(TestModelEvent testModel){
+        testModelEvents.add(testModel);
+    }
+
+    public TestModelEvent runTestModel(){
+        return testModelEvents.remove();
     }
 }

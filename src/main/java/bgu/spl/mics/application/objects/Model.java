@@ -44,6 +44,9 @@ public class Model {
     public void setStatusToTrained() {
         status = Status.Trained;
     }
+    public void setStatusToTested() {
+        status = Status.Tested;
+    }
 
     public Results getResults() {
         return results;
