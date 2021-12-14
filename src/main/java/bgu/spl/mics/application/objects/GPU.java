@@ -1,7 +1,10 @@
 package bgu.spl.mics.application.objects;
 
+import bgu.spl.mics.Event;
 
 import java.util.Collection;
+import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -20,11 +23,14 @@ public class GPU {
     private Model model;
     private Data data;
     private final Cluster cluster;
-    private int numberOfBatchesAvailable;
-    private boolean workingOnModel;
-    private BlockingQueue<DataBatch> unProcessedData;
+    private boolean trainingModel;
+    private Queue<DataBatch> unProcessedData;
     private BlockingQueue<DataBatch> processedData;
 
+    private LinkedList<? extends Event> trainModelEvents;
+    private LinkedList<? extends Event> testModelEvents;
+
+    private int numberOfBatchesAvailable; //place available for processed data.
     private DataBatch currDataProcessing;
     private int dataProcessingTime;
     private int totalTimeTicks;
@@ -36,9 +42,11 @@ public class GPU {
     public GPU(Type type){
         //type from json file
         this.type = type;
-        workingOnModel = false;
-        unProcessedData = new LinkedBlockingQueue<>();
+        trainingModel = false;
+        unProcessedData = new LinkedList<>();
         processedData = new LinkedBlockingQueue<>();
+        trainModelEvents = new LinkedList<>();
+        testModelEvents = new LinkedList<>();
         cluster = Cluster.getInstance();
 
         switch(getType()){ //capacity of the GPU depends on type.
@@ -85,16 +93,37 @@ public class GPU {
         return cluster;
     }
 
+    public boolean isTrainingModel() {
+        return trainingModel;
+    }
+
+    public boolean availableTrainModel(){
+        return !(trainModelEvents.isEmpty());
+    }
+
+    public boolean availableTestModel(){
+        return !(testModelEvents.isEmpty());
+    }
+
+    /**
+     * @inv: numberOfBatchesAvailable > -1
+     * @post: numberOfBatchesAvailable == @pre numberOfBatchesAvailable
+     * @return the number of processed batches available in the gpu vmemory.
+     */
     public int getNumberOfBatchesAvailable(){
         return numberOfBatchesAvailable;
     }
 
     /**
-     * @post: availableProcessedBatch = @pre availableProcessedBatch
+     * @post: availableProcessedBatch == @pre availableProcessedBatch
      * @return true if there is an available place for a processed batch, false otherwise.
      */
     public boolean availableProcessedBatch(){
         return numberOfBatchesAvailable > 0;
+    }
+
+    public boolean isUnProcessedDataEmpty(){
+        return unProcessedData.isEmpty();
     }
 
     public boolean isProcessedDataEmpty(){
@@ -106,10 +135,10 @@ public class GPU {
      * @param model the new model the GPU is working on.
      */
     public void insertModel(Model model){
-        if(!workingOnModel){
+        if(!trainingModel){
             this.model = model;
             data = model.getData();
-            workingOnModel = true;
+            trainingModel = true;
         }
     }
 
@@ -123,42 +152,48 @@ public class GPU {
         }
     }
 
-    public void pushDataToProcess(DataBatch dataBatch){
-        cluster.sendDataFromGpu(dataBatch);
+    public void incrementTotalTimeTicks() {
+        totalTimeTicks++;
+    }
+
+    public void pushDataToProcess(){
+        if(!isUnProcessedDataEmpty()){
+            cluster.sendDataFromGpu(unProcessedData.remove());
+        }
+    }
+
+    public boolean isCpuProcessedBatchReady(){
+        return !(cluster.getGpuQueue(this).isEmpty());
     }
 
     public void fetchProcessedData(){
-        if(cluster.getGpuQueue(this).peek() != null){ //thread safe, because every gpu has his own queue.
-            try{
-                DataBatch dataBatch = cluster.getGpuQueue(this).take();
-                processedData.add(dataBatch);
-                numberOfBatchesAvailable--;
-            }catch (InterruptedException exception){}
-        }
+        DataBatch dataBatch = cluster.getGpuQueue(this).remove();
+        processedData.add(dataBatch);
+        numberOfBatchesAvailable--;
     }
 
-    public void processDataBatch(){
-        if(!isProcessedDataEmpty()){
-            try{
-                currDataProcessing = processedData.take();
-                currDataStartTime = totalTimeTicks;
-            }catch (InterruptedException exception){}
-        }
-    }
 
     public void finishProcessingDataBatch(){
         numberOfBatchesAvailable++;
         data.incrementProcessedData();
+        if(!isProcessedDataEmpty()){ //processing a new data batch.
+            currDataProcessing = processedData.remove();
+            currDataStartTime = totalTimeTicks;
+        }
     }
 
     public void finishTrainModelEvent(){
-        workingOnModel = false;
         unProcessedData.clear();
         processedData.clear();
         currDataProcessing = null;
+        trainingModel = false;
     }
 
     public boolean isProcessDataDone(){
         return (totalTimeTicks - currDataStartTime) == dataProcessingTime;
+    }
+
+    public void runTrainModel(){
+        trainModelEvents.remove();
     }
 }
