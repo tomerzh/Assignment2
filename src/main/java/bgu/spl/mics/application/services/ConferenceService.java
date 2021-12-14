@@ -1,10 +1,19 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Event;
+import bgu.spl.mics.MessageBusImpl;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.PublishConferenceBroadcast;
+import bgu.spl.mics.application.messages.PublishResultsEvent;
+import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.objects.ConfrenceInformation;
+import bgu.spl.mics.application.objects.Model;
+import bgu.spl.mics.application.objects.Student;
+
 
 /**
  * Conference service is in charge of
- * aggregating good results and publishing them via the {@link PublishConfrenceBroadcast},
+ * aggregating good results and publishing them via the {@link PublishConferenceBroadcast},
  * after publishing results the conference will unregister from the system.
  * This class may not hold references for objects which it is not responsible for.
  *
@@ -12,14 +21,34 @@ import bgu.spl.mics.MicroService;
  * You MAY change constructor signatures and even add new public constructors.
  */
 public class ConferenceService extends MicroService {
-    public ConferenceService(String name) {
-        super("Change_This_Name");
-        // TODO Implement this
+
+    String name;
+    ConfrenceInformation conference;
+    int currTime;
+
+    public ConferenceService(String name, ConfrenceInformation conference) {
+        super(name);
+        this.conference = conference;
+        currTime = 0;
     }
 
     @Override
     protected void initialize() {
-        // TODO Implement this
+        subscribeBroadcast(TickBroadcast.class, tick->{
+            currTime = currTime + 1;
+            if(currTime == conference.getDate()){
+                PublishConferenceBroadcast publishBroadcast = new PublishConferenceBroadcast(conference);
+                this.sendBroadcast(publishBroadcast);
+                MessageBusImpl.getInstance().unregister(this);
+            }
+        });
+
+        subscribeEvent(PublishResultsEvent.class, publishResultEvent->{
+            Student student = publishResultEvent.getStudent();
+            Model model = publishResultEvent.getModel();
+            conference.addToPublishHash(student, model);
+        });
+
 
     }
 }

@@ -2,8 +2,9 @@ package bgu.spl.mics;
 
 import bgu.spl.mics.application.messages.PublishConferenceBroadcast;
 import bgu.spl.mics.application.messages.TestModelEvent;
-import bgu.spl.mics.application.objects.CPU;
+import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.services.CPUService;
+import bgu.spl.mics.application.services.GPUService;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -12,14 +13,18 @@ import static org.junit.Assert.*;
 
 public class MessageBusTest {
     public static MessageBusImpl messageBus;
-    public static CPUService service;
+    public static GPUService service;
     public static TestModelEvent event;
     public static PublishConferenceBroadcast broadcast;
+    public static Student student;
+    public static Model model;
 
     @Before
     public void setUp() throws Exception {
         messageBus = MessageBusImpl.getInstance();
-        service = new CPUService("test", new CPU(16));
+        GPU gpu = new GPU(GPU.Type.RTX2080);
+        service = new GPUService("Test", gpu);
+        model = new Model(student, "Test", Data.Type.Images, 3000);
     }
 
     @After
@@ -42,11 +47,11 @@ public class MessageBusTest {
     public void complete() {
         messageBus.register(service);
         messageBus.subscribeEvent(event.getClass(), service);
-//        Future<Integer> future = messageBus.sendEvent(event);
-//        assertFalse("future should not be resolved yet", future.isDone());
-//        messageBus.complete(event, 123);
-//        assertTrue("event should be resolved", future.isDone());
-//        assertTrue(future.get() == 123);
+        Future future = messageBus.sendEvent(event);
+        assertFalse("future should not be resolved yet", future.isDone());
+        messageBus.complete(event, model);
+        assertTrue("event should be resolved", future.isDone());
+        assertTrue(future.get() == model.getResults());
     }
 
     @Test

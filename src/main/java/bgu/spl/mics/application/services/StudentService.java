@@ -3,10 +3,7 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.Event;
 import bgu.spl.mics.Future;
 import bgu.spl.mics.MicroService;
-import bgu.spl.mics.application.messages.PublishConferenceBroadcast;
-import bgu.spl.mics.application.messages.TestModelEvent;
-import bgu.spl.mics.application.messages.TickBroadcast;
-import bgu.spl.mics.application.messages.TrainModelEvent;
+import bgu.spl.mics.application.messages.*;
 import bgu.spl.mics.application.objects.Model;
 import bgu.spl.mics.application.objects.Student;
 import com.sun.org.apache.xpath.internal.operations.Mod;
@@ -39,12 +36,16 @@ public class StudentService extends MicroService {
 
     @Override
     protected void initialize() {
+        //PublishConferenceBroadcast callback
         subscribeBroadcast(PublishConferenceBroadcast.class, publishConference->{
             HashMap<Student, HashSet<Model>> publications = publishConference.getConference().getStudentToPublishedModels();
             for(Student publishStudent : publications.keySet()){
                 if(publishStudent == student){
                     int publishedModels = publications.get(publishStudent).size();
                     student.setPublications(publishedModels);
+                    for(Model model : publications.get(publishStudent)){
+                        model.setPublish();
+                    }
                 }
 
                 else{
@@ -54,6 +55,7 @@ public class StudentService extends MicroService {
             }
         });
 
+        //TickBroadcast callback
         subscribeBroadcast(TickBroadcast.class, tick->{
             if(currEvent == null){
                 Model newModelToTrain = student.nextModelToTrain();
@@ -67,10 +69,23 @@ public class StudentService extends MicroService {
             else if(currEvent.getClass() == TrainModelEvent.class){
                 if(currFuture.isDone()){
                     Model trainedModel = currFuture.get();
-//                    Event<Model> newTestModelEvent = new TestModelEvent(trainedModel);
+                    Event<Model> newTestModelEvent = new TestModelEvent(student,trainedModel);
+                    currEvent = newTestModelEvent;
+                    currFuture = this.sendEvent(newTestModelEvent);
                 }
             }
 
+            else if(currEvent.getClass() == TestModelEvent.class){
+                if(currFuture.isDone()){
+                    Model testedModel = currFuture.get();
+                    if(testedModel.getResults() == Model.Results.Good){
+                        Event<Model> publishResult = new PublishResultsEvent(student, testedModel);
+                        currFuture = this.sendEvent(publishResult);
+                    }
+                    currEvent = null;
+                    currFuture = null;
+                }
+            }
         });
     }
 }

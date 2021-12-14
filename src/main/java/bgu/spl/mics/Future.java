@@ -73,9 +73,11 @@ public class Future<T> {
      */
 	public T get(long timeout, TimeUnit unit) {
 		try{
-			Thread.sleep(timeout);
-		}catch(InterruptedException ex){}
+			unit.sleep(timeout);
+		}catch(InterruptedException ex){
+			return result;
+		}
 		return result;
-	} // to do!!
+	}
 
 }
