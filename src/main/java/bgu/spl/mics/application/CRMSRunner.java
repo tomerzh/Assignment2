@@ -5,6 +5,9 @@ import com.google.gson.stream.JsonReader;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 /** This is the Main class of Compute Resources Management System application. You should parse the input file,
  * create the different instances of the objects, and run the system.
@@ -14,10 +17,11 @@ public class CRMSRunner {
     public static void main(String[] args){
         try{
             Gson gson = new Gson();
-            JsonReader reader = new JsonReader(new FileReader("example_input.json"));
-            JsonRead data = gson.fromJson(reader, JsonRead.class);
+            Reader reader = Files.newBufferedReader(Paths.get("example_input.json"));
+            JsonRead data = gson.fromJson(reader,JsonRead.class);
             System.out.println("Hello");
-        }catch (FileNotFoundException exception){}
+            reader.close();
+        }catch (Exception ex){}
 
     }
 }

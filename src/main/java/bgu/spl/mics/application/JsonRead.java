@@ -16,11 +16,14 @@ public class JsonRead {
     private int tickTime;
     private int duration;
 
-    public JsonRead(){
-        students = new LinkedList<>();
-        gpus = new LinkedList<>();
-        cpus = new LinkedList<>();
-        confrences = new LinkedList<>();
+    public JsonRead(LinkedList<Student> students, LinkedList<GPU> gpus, LinkedList<CPU> cpus,
+                    LinkedList<ConfrenceInformation> confrences, int tickTime, int duration){
+        this.students = students;
+        this.gpus = gpus;
+        this.cpus = cpus;
+        this.confrences = confrences;
+        this.tickTime = tickTime;
+        this.duration = duration;
     }
 
     public LinkedList<Student> getStudents() {
