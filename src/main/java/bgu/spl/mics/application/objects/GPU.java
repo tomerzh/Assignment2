@@ -25,18 +25,20 @@ public class GPU {
     private Model model;
     private Data data;
     private final Cluster cluster;
-    private boolean trainingModel;
+    private boolean trainingModel = false;
     private Queue<DataBatch> unProcessedData;
     private BlockingQueue<DataBatch> processedData;
 
     private LinkedList<TrainModelEvent> trainModelEvents;
     private LinkedList<TestModelEvent> testModelEvents;
 
-    private int numberOfBatchesAvailable; //place available for processed data.
-    private DataBatch currDataProcessing;
-    private int dataProcessingTime;
     private int totalTimeTicks = 0;
+    private int timeUnitUsed = 0;
+    private int numberOfBatchesAvailable; //place available for processed data.
+    private int dataProcessingTime;
+    private DataBatch currDataProcessing;
     private int currDataStartTime;
+    private boolean processingDataBatch = false;
 
     /**
      * public constructor
@@ -44,7 +46,6 @@ public class GPU {
     public GPU(Type type){
         //type from json file
         this.type = type;
-        trainingModel = false;
         unProcessedData = new LinkedList<>();
         processedData = new LinkedBlockingQueue<>();
         trainModelEvents = new LinkedList<>();
@@ -107,6 +108,10 @@ public class GPU {
         return !(testModelEvents.isEmpty());
     }
 
+    public boolean isProcessingDataBatch() {
+        return processingDataBatch;
+    }
+
     /**
      * @inv: numberOfBatchesAvailable > -1
      * @post: numberOfBatchesAvailable == @pre numberOfBatchesAvailable
@@ -114,6 +119,10 @@ public class GPU {
      */
     public int getNumberOfBatchesAvailable(){
         return numberOfBatchesAvailable;
+    }
+
+    public int getTimeUnitUsed() {
+        return timeUnitUsed;
     }
 
     /**
@@ -156,6 +165,9 @@ public class GPU {
 
     public void incrementTotalTimeTicks() {
         totalTimeTicks++;
+        if(isProcessingDataBatch()){ //gpu is processing data batch.
+            timeUnitUsed++;
+        }
     }
 
     public void pushDataToProcess(){
@@ -168,19 +180,28 @@ public class GPU {
         return !(cluster.getGpuQueue(this).isEmpty());
     }
 
+    public void processDataBatch(){
+        processingDataBatch = true;
+        currDataProcessing = processedData.remove();
+        currDataStartTime = totalTimeTicks;
+    }
+
     public void fetchProcessedData(){
         DataBatch dataBatch = cluster.getGpuQueue(this).remove();
         processedData.add(dataBatch);
         numberOfBatchesAvailable--;
+        if(!isProcessingDataBatch()){
+            processDataBatch();
+        }
     }
 
 
     public void finishProcessingDataBatch(){
+        processingDataBatch = false;
         numberOfBatchesAvailable++;
         data.incrementProcessedData();
         if(!isProcessedDataEmpty()){ //processing a new data batch.
-            currDataProcessing = processedData.remove();
-            currDataStartTime = totalTimeTicks;
+            processDataBatch();
         }
     }
 

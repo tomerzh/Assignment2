@@ -24,8 +24,8 @@ public class Cluster {
 	private Object lockModelsName = new Object();
 
 	private int totalDataProcessed = 0;
-	private int cpuTimeUsed;
-	private int gpuTimeUsed;
+	private int cpuTimeUsed = 0;
+	private int gpuTimeUsed = 0;
 
 	private Cluster(){
 		unprocessedData = new LinkedBlockingQueue<>();
@@ -59,9 +59,13 @@ public class Cluster {
 		}
 	}
 
-	public void sumAllDataProcessed(){
+	public void sumAllDataProcessedAndTimeUnits(){
 		for (CPU cpu: cpus) {
 			totalDataProcessed = totalDataProcessed + cpu.getTotalDataProcessed();
+			cpuTimeUsed = cpuTimeUsed + cpu.getTimeUnitUsed();
+		}
+		for (GPU gpu: gpus.keySet()) {
+			gpuTimeUsed = gpuTimeUsed + gpu.getTimeUnitUsed();
 		}
 	}
 

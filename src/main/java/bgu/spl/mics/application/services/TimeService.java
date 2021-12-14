@@ -29,7 +29,7 @@ public class TimeService extends MicroService{
 		subscribeBroadcast(TickBroadcast.class, tick->{
 			currTime++;
 			if(currTime == duration){
-				terminate();
+				terminate(); //not finished.
 			}
 			else{
 				try{

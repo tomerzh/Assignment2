@@ -15,6 +15,7 @@ public class CPU {
     private int currDataProcessingTime;
     private int currDataStartTime;
     private int totalDataProcessed = 0;
+    private int timeUnitUsed = 0;
     private boolean availableToProcess = true;
     private final Cluster cluster;
 
@@ -49,6 +50,9 @@ public class CPU {
 
     public void incrementTotalTimeTicks() {
         totalTimeTicks++;
+        if(!isAvailableToProcess()){ //cpu is processing data batch.
+            timeUnitUsed++;
+        }
     }
 
     public void fetchUnprocessedData(){
@@ -70,6 +74,10 @@ public class CPU {
 
     public int getTotalDataProcessed() {
         return totalDataProcessed;
+    }
+
+    public int getTimeUnitUsed(){
+        return timeUnitUsed;
     }
 
     public void pushProcessedData(){
