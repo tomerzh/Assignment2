@@ -2,6 +2,7 @@ package bgu.spl.mics.application.objects;
 
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.ListIterator;
 import java.util.Objects;
 
 /**
@@ -22,6 +23,24 @@ public class Student {
     private LinkedList<Model> models;
     private int publications;
     private int papersRead;
+    private ListIterator<Model> modelItr;
+
+    public Student(String name, String department, Degree status, LinkedList<Model> models){
+        this.name = name;
+        this.department = department;
+        this.status = status;
+        this.models = models;
+        this.publications = 0;
+        this.papersRead = 0;
+        modelItr = models.listIterator();
+    }
+
+    public Model nextModelToTrain(){
+        if(modelItr.hasNext()){
+            return modelItr.next();
+        }
+        return null;
+    }
 
     public String getName() {
         return name;
@@ -60,7 +79,7 @@ public class Student {
     }
 
     public void setPublications(int publications) {
-        this.publications = publications;
+        this.publications = this.publications + publications;
     }
 
     public int getPapersRead() {
@@ -68,7 +87,7 @@ public class Student {
     }
 
     public void setPapersRead(int papersRead) {
-        this.papersRead = papersRead;
+        this.papersRead = this.papersRead + papersRead;
     }
 
     @Override
@@ -78,7 +97,6 @@ public class Student {
         Student student = (Student) o;
         return name == student.name;
     }
-
 
     @Override
     public String toString() {
