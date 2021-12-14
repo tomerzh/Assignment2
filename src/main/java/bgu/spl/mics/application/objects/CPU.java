@@ -29,25 +29,32 @@ public class CPU {
     }
 
     /**
-     *
-     * @return number of cores in the CPU.
+     * @return number of cores in the CPU
      */
     public int getCores() {
         return cores;
     }
 
     /**
-     *
-     * @return the instance of the singleton cluster.
+     * @return the instance of the singleton cluster
      */
     public Cluster getCluster(){
         return cluster;
     }
 
+    /**
+     * @inv: @pre(isAvailableToProcess) == @post(isAvailableToProcess)
+     * @return true if cpu can process a new data batch, false otherwise
+     */
     public boolean isAvailableToProcess(){
         return availableToProcess;
     }
 
+    /**
+     * everytime cpu gets TickBroadcast, the time increments by 1
+     * if the cpu is currently processing data batch, the cpu time used increments by 1
+     * @post: totalTimeTicks = @pre(totalTimeTicks) + 1
+     */
     public void incrementTotalTimeTicks() {
         totalTimeTicks++;
         if(!isAvailableToProcess()){ //cpu is processing data batch.
@@ -55,6 +62,9 @@ public class CPU {
         }
     }
 
+    /**
+     * pulling new unprocessed data batch from the cluster to the cpu to process
+     */
     public void fetchUnprocessedData(){
         currDataProcessing = cluster.dataBatchToCpu();
         currDataStartTime = totalTimeTicks;
@@ -72,20 +82,33 @@ public class CPU {
         }
     }
 
+    /**
+     * number of data batches the cpu processed
+     * @return number of data batches the cpu processed so far
+     */
     public int getTotalDataProcessed() {
         return totalDataProcessed;
     }
 
+    /**
+     * @return total time (ticks) the cpu was processing data batch
+     */
     public int getTimeUnitUsed(){
         return timeUnitUsed;
     }
 
+    /**
+     * cpu pushing processed data batch to the cluster
+     */
     public void pushProcessedData(){
         cluster.sendDataFromCpu(currDataProcessing);
         totalDataProcessed++;
         availableToProcess = true;
     }
 
+    /**
+     * @return true if current data batch is finished processing, false otherwise
+     */
     public boolean isProcessDataDone(){
         return (totalTimeTicks - currDataStartTime) == currDataProcessingTime;
     }
