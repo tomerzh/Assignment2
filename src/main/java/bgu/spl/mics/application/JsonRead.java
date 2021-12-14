@@ -73,4 +73,16 @@ public class JsonRead {
     public void setDuration(int duration) {
         this.duration = duration;
     }
+
+    @Override
+    public String toString() {
+        return "JsonRead{" +
+                "students=" + students +
+                ", gpus=" + gpus +
+                ", cpus=" + cpus +
+                ", confrences=" + confrences +
+                ", tickTime=" + tickTime +
+                ", duration=" + duration +
+                '}';
+    }
 }

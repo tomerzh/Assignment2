@@ -56,8 +56,4 @@ public class GPUTest {
         assertEquals(32, gpu.getNumberOfBatchesAvailable());
     }
 
-    @Test
-    public void availableProcessedBatch() {
-        assertTrue(gpu.availableProcessedBatch());
-    }
 }

@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
 
 /**
@@ -29,7 +30,7 @@ public class TimeService extends MicroService{
 		subscribeBroadcast(TickBroadcast.class, tick->{
 			currTime++;
 			if(currTime == duration){
-				terminate();
+				sendBroadcast(new TerminateBroadcast());
 			}
 			else{
 				try{

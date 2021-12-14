@@ -25,18 +25,20 @@ public class GPU {
     private Model model;
     private Data data;
     private final Cluster cluster;
-    private boolean trainingModel;
+    private boolean trainingModel = false;
     private Queue<DataBatch> unProcessedData;
     private BlockingQueue<DataBatch> processedData;
 
     private LinkedList<TrainModelEvent> trainModelEvents;
     private LinkedList<TestModelEvent> testModelEvents;
 
-    private int numberOfBatchesAvailable; //place available for processed data.
-    private DataBatch currDataProcessing;
-    private int dataProcessingTime;
     private int totalTimeTicks = 0;
+    private int timeUnitUsed = 0;
+    private int numberOfBatchesAvailable; //place available for processed data.
+    private int dataProcessingTime;
+    private DataBatch currDataProcessing;
     private int currDataStartTime;
+    private boolean processingDataBatch = false;
 
     /**
      * public constructor
@@ -44,7 +46,6 @@ public class GPU {
     public GPU(Type type){
         //type from json file
         this.type = type;
-        trainingModel = false;
         unProcessedData = new LinkedList<>();
         processedData = new LinkedBlockingQueue<>();
         trainModelEvents = new LinkedList<>();
@@ -68,43 +69,59 @@ public class GPU {
     }
 
     /**
-     *
-     * @return the type of the GPU.
+     * @return the type of the GPU
      */
     public Type getType() {
         return type;
     }
 
     /**
-     *
-     * @return the model that the GPU is working on.
+     * @return the model that the GPU is working on
      */
     public Model getModel(){
         return model;
     }
 
+    /**
+     * @return the data that the GPU is working on
+     */
     public Data getData(){
         return data;
     }
 
     /**
-     *
-     * @return the instance of the singleton cluster.
+     * @return the instance of the singleton cluster
      */
     public Cluster getCluster(){
         return cluster;
     }
 
+    /**
+     * @return true if gpu is currently training a model, false otherwise
+     */
     public boolean isTrainingModel() {
         return trainingModel;
     }
 
+    /**
+     * @return true if there is a TrainModelEvent in the list that can be handled, false otherwise
+     */
     public boolean availableTrainModel(){
         return !(trainModelEvents.isEmpty());
     }
 
+    /**
+     * @return true if there is a TestModelEvent in the list that can be handled, false otherwise
+     */
     public boolean availableTestModel(){
         return !(testModelEvents.isEmpty());
+    }
+
+    /**
+     * @return true if the gpu is currently processing data batch, false otherwise
+     */
+    public boolean isProcessingDataBatch() {
+        return processingDataBatch;
     }
 
     /**
@@ -114,6 +131,13 @@ public class GPU {
      */
     public int getNumberOfBatchesAvailable(){
         return numberOfBatchesAvailable;
+    }
+
+    /**
+     * @return total time (ticks) the gpu was processing data batch
+     */
+    public int getTimeUnitUsed() {
+        return timeUnitUsed;
     }
 
     /**
@@ -154,49 +178,86 @@ public class GPU {
         }
     }
 
+    /**
+     * everytime gpu gets TickBroadcast, the time increments by 1
+     * if the gpu is currently processing data batch, the gpu time used increments by 1
+     * @post: totalTimeTicks = @pre(totalTimeTicks) + 1
+     */
     public void incrementTotalTimeTicks() {
         totalTimeTicks++;
+        if(isProcessingDataBatch()){ //gpu is processing data batch.
+            timeUnitUsed++;
+        }
     }
 
+    /**
+     * gpu pushing unprocessed data batch to the cluster for the cpu to process
+     */
     public void pushDataToProcess(){
         if(!isUnProcessedDataEmpty()){
             cluster.sendDataFromGpu(unProcessedData.remove());
         }
     }
 
+    /**
+     * @return true if there is processed data batch in the cluster ready for the gpu to process, false otherwise
+     */
     public boolean isCpuProcessedBatchReady(){
         return !(cluster.getGpuQueue(this).isEmpty());
     }
 
+    /**
+     * gpu add to the list a new processed data batch from the cluster
+     */
     public void fetchProcessedData(){
         DataBatch dataBatch = cluster.getGpuQueue(this).remove();
         processedData.add(dataBatch);
         numberOfBatchesAvailable--;
-    }
-
-
-    public void finishProcessingDataBatch(){
-        numberOfBatchesAvailable++;
-        data.incrementProcessedData();
-        if(!isProcessedDataEmpty()){ //processing a new data batch.
-            currDataProcessing = processedData.remove();
-            currDataStartTime = totalTimeTicks;
+        if(!isProcessingDataBatch()){
+            processDataBatch();
         }
     }
 
+    /**
+     * gpu take a new processed data batch from the queue to process
+     */
+    public void processDataBatch(){
+        processingDataBatch = true;
+        currDataProcessing = processedData.remove();
+        currDataStartTime = totalTimeTicks;
+    }
+
+    /**
+     * @return true if the current data batch is done processing, false otherwise or if current data batch is null
+     */
+    public boolean isProcessDataDone(){
+        if(currDataProcessing == null){
+            return false;
+        }
+        return (totalTimeTicks - currDataStartTime) == dataProcessingTime;
+    }
+
+    /**
+     * gpu finished processing data batch, and checks if there is a new data batch to process
+     */
+    public void finishProcessingDataBatch(){
+        processingDataBatch = false;
+        numberOfBatchesAvailable++;
+        data.incrementProcessedData();
+        if(!isProcessedDataEmpty()){ //processing a new data batch.
+            processDataBatch();
+        }
+    }
+
+    /**
+     * all the data is processed, so the TrainModelEvent is done
+     */
     public void finishTrainModelEvent(){
         unProcessedData.clear();
         processedData.clear();
         currDataProcessing = null;
         trainingModel = false;
         cluster.addModelTrained(model.getName());
-    }
-
-    public boolean isProcessDataDone(){
-        if(currDataProcessing == null){
-            return false;
-        }
-        return (totalTimeTicks - currDataStartTime) == dataProcessingTime;
     }
 
     public void addTrainModel(TrainModelEvent trainModel){
