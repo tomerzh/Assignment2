@@ -35,7 +35,7 @@ public class GPU {
     private int numberOfBatchesAvailable; //place available for processed data.
     private DataBatch currDataProcessing;
     private int dataProcessingTime;
-    private int totalTimeTicks;
+    private int totalTimeTicks = 0;
     private int currDataStartTime;
 
     /**
@@ -189,6 +189,7 @@ public class GPU {
         processedData.clear();
         currDataProcessing = null;
         trainingModel = false;
+        cluster.addModelTrained(model.getName());
     }
 
     public boolean isProcessDataDone(){

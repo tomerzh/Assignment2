@@ -2,6 +2,7 @@ package bgu.spl.mics;
 
 import bgu.spl.mics.application.messages.PublishConferenceBroadcast;
 import bgu.spl.mics.application.messages.TestModelEvent;
+import bgu.spl.mics.application.objects.CPU;
 import bgu.spl.mics.application.services.CPUService;
 import org.junit.After;
 import org.junit.Before;
@@ -18,7 +19,7 @@ public class MessageBusTest {
     @Before
     public void setUp() throws Exception {
         messageBus = MessageBusImpl.getInstance();
-        service = new CPUService("test");
+        service = new CPUService("test", new CPU(16));
     }
 
     @After

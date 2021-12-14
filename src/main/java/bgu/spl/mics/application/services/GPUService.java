@@ -37,7 +37,7 @@ public class GPUService extends MicroService {
             if(!gpu.isTrainingModel()){
                 currEvent = trainModelEvent;
                 gpu.insertModel(trainModelEvent.getModel());
-                gpu.getModel().setStatusToTraining();
+                gpu.getModel().setStatus(Model.Status.Training);
                 gpu.splitToDataBatches();
             }
             else{
@@ -50,25 +50,25 @@ public class GPUService extends MicroService {
                 int number = new Random().nextInt(10);
                 if(testModelEvent.getStudent().getStatus() == Student.Degree.MSc){
                     if(number < 6){ //Test finished successfully.
-                        testModelEvent.getModel().setStatusToTested();
-                        testModelEvent.getModel().setResultsToGood();
+                        testModelEvent.getModel().setStatus(Model.Status.Tested);
+                        testModelEvent.getModel().setResults(Model.Results.Good);
                         complete(testModelEvent, testModelEvent.getModel());
                     }
                     else{ //unsuccessful test.
-                        testModelEvent.getModel().setStatusToTested();
-                        testModelEvent.getModel().setResultsToBad();
+                        testModelEvent.getModel().setStatus(Model.Status.Tested);
+                        testModelEvent.getModel().setResults(Model.Results.Bad);
                         complete(testModelEvent, testModelEvent.getModel());
                     }
                 }
                 else if(testModelEvent.getStudent().getStatus() == Student.Degree.PhD){
                     if(number < 8){ //Test finished successfully.
-                        testModelEvent.getModel().setStatusToTested();
-                        testModelEvent.getModel().setResultsToGood();
+                        testModelEvent.getModel().setStatus(Model.Status.Tested);
+                        testModelEvent.getModel().setResults(Model.Results.Good);
                         complete(testModelEvent, testModelEvent.getModel());
                     }
                     else{ //unsuccessful test.
-                        testModelEvent.getModel().setStatusToTested();
-                        testModelEvent.getModel().setResultsToBad();
+                        testModelEvent.getModel().setStatus(Model.Status.Tested);
+                        testModelEvent.getModel().setResults(Model.Results.Bad);
                         complete(testModelEvent, testModelEvent.getModel());
                     }
                 }
@@ -94,7 +94,8 @@ public class GPUService extends MicroService {
                 }
 
                 if(gpu.getData().isDataFinishedProcessing()){ //training and finished all the data.
-                    gpu.getModel().setStatusToTrained();
+                    gpu.getModel().setStatus(Model.Status.Trained);
+                    gpu.finishTrainModelEvent();
                     complete(currEvent, gpu.getModel());
                 }
             }

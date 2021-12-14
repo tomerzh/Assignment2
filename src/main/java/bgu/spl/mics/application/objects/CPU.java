@@ -11,9 +11,10 @@ import java.util.LinkedList;
 public class CPU {
     private final int cores;
     private DataBatch currDataProcessing;
+    private int totalTimeTicks = 0;
     private int currDataProcessingTime;
-    private int totalTimeTicks;
     private int currDataStartTime;
+    private int totalDataProcessed = 0;
     private boolean availableToProcess = true;
     private final Cluster cluster;
 
@@ -42,6 +43,14 @@ public class CPU {
         return cluster;
     }
 
+    public boolean isAvailableToProcess(){
+        return availableToProcess;
+    }
+
+    public void incrementTotalTimeTicks() {
+        totalTimeTicks++;
+    }
+
     public void fetchUnprocessedData(){
         currDataProcessing = cluster.dataBatchToCpu();
         currDataStartTime = totalTimeTicks;
@@ -59,8 +68,13 @@ public class CPU {
         }
     }
 
+    public int getTotalDataProcessed() {
+        return totalDataProcessed;
+    }
+
     public void pushProcessedData(){
         cluster.sendDataFromCpu(currDataProcessing);
+        totalDataProcessed++;
         availableToProcess = true;
     }
 
