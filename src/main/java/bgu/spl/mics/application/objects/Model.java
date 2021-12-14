@@ -32,4 +32,28 @@ public class Model {
     public Data getData(){
         return data;
     }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatusToTraining() {
+        status = Status.Training;
+    }
+
+    public void setStatusToTrained() {
+        status = Status.Trained;
+    }
+
+    public Results getResults() {
+        return results;
+    }
+
+    public void setResultsToGood() {
+        results = Results.Good;
+    }
+
+    public void setResultsToBad() {
+        results = Results.Bad;
+    }
 }

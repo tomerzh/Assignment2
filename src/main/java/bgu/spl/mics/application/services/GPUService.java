@@ -1,10 +1,12 @@
 package bgu.spl.mics.application.services;
 
+import bgu.spl.mics.Event;
 import bgu.spl.mics.MicroService;
 import bgu.spl.mics.application.messages.TestModelEvent;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.messages.TrainModelEvent;
 import bgu.spl.mics.application.objects.GPU;
+import bgu.spl.mics.application.objects.Model;
 
 import java.awt.*;
 
@@ -19,7 +21,8 @@ import java.awt.*;
  */
 public class GPUService extends MicroService {
 
-    private GPU gpu;
+    private final GPU gpu;
+    private Event<Model> currEvent;
     public GPUService(String name, GPU gpu) {
         super(name);
         this.gpu = gpu;
@@ -28,33 +31,34 @@ public class GPUService extends MicroService {
     @Override
     protected void initialize() {
         subscribeEvent(TrainModelEvent.class, trainModelEvent->{
+            currEvent = trainModelEvent;
             gpu.insertModel(trainModelEvent.getModel());
+            gpu.getModel().setStatusToTraining();
             gpu.splitToDataBatches();
-            while(!gpu.getData().isDataFinishedProcessing()){
-                if(gpu.isCpuProcessedBatchReady()){
-                    gpu.fetchProcessedData();
-                }
-                if(gpu.availableProcessedBatch()){
-                    gpu.pushDataToProcess();
-                }
-            }
         });
-        subscribeEvent(TestModelEvent.class, testModelEvent->{
 
+        subscribeEvent(TestModelEvent.class, testModelEvent->{
+            currEvent = testModelEvent;
         });
+
         subscribeBroadcast(TickBroadcast.class, tick->{
             gpu.incrementTotalTimeTicks();
             if(gpu.isTrainingModel()){ //if gpu is training model.
-                if(!gpu.getData().isDataFinishedProcessing()){ //training and not finished
-                    if(gpu.isCpuProcessedBatchReady()){ //if there is new processed batch in the cluster
-                        gpu.fetchProcessedData();
-                    }
-                    if(gpu.availableProcessedBatch()){ //if gpu have free space for processed batch and unprocessed isn't empty.
-                        gpu.pushDataToProcess();
-                    }
-                    if(gpu.isProcessDataDone()){ //if gpu finished processing data batch.
-                        gpu.finishProcessingDataBatch();
-                    }
+                if(gpu.isCpuProcessedBatchReady()){ //if there is new processed batch in the cluster
+                    gpu.fetchProcessedData();
+                }
+
+                if(gpu.availableProcessedBatch()){ //if gpu have free space for processed batch and unprocessed isn't empty.
+                    gpu.pushDataToProcess();
+                }
+
+                if(gpu.isProcessDataDone()){ //if gpu finished processing data batch.
+                    gpu.finishProcessingDataBatch();
+                }
+
+                if(gpu.getData().isDataFinishedProcessing()){ //training and finished all the data.
+                    gpu.getModel().setStatusToTrained();
+                    complete(currEvent, gpu.getModel());
                 }
             }
             else{

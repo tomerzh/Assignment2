@@ -196,4 +196,8 @@ public class GPU {
     public void runTrainModel(){
         trainModelEvents.remove();
     }
+
+    public void runTestModel(){
+        testModelEvents.remove();
+    }
 }
