@@ -21,14 +21,14 @@ public class MessageBusImpl implements MessageBus {
 
 	private HashMap<Class<? extends Event>, LinkedList<MicroService>> eventToServices;
 	private HashMap<Class<? extends Broadcast>, HashSet<MicroService>> broadcastToService;
-	private HashMap<MicroService, LinkedBlockingQueue<Message>> serviceToWorkQueue;
+	private HashMap<MicroService, BlockingQueue<Message>> serviceToWorkQueue;
 	private HashMap<Event<?>, Future<?>> eventToFuture;
 	private HashMap<Class<? extends Event>, MicroService> eventToNextMs;
 
 	private MessageBusImpl(){
 		eventToServices = new HashMap<Class<? extends Event>, LinkedList<MicroService>>();
 		broadcastToService = new HashMap<Class<? extends Broadcast>, HashSet<MicroService>>();
-		serviceToWorkQueue = new HashMap<MicroService, LinkedBlockingQueue<Message>>();
+		serviceToWorkQueue = new HashMap<MicroService, BlockingQueue<Message>>();
 		eventToFuture = new HashMap<Event<?>, Future<?>>();
 		eventToNextMs = new HashMap<Class<? extends Event>, MicroService>();
 	}
@@ -76,9 +76,10 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public <T> void complete(Event<T> e, T result) {
-//		synchronized (eventToFuture){
-//			eventToFuture.get(e).resolve(result);
-//		}
+		synchronized (eventToFuture){
+			Future future = eventToFuture.get(e);
+			future.resolve(result);
+		}
 	}
 
 	@Override
@@ -109,26 +110,40 @@ public class MessageBusImpl implements MessageBus {
 	
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		if(!eventToServices.containsKey(e.getClass())){ //no suitable service was ever exist
-			return null;
+		if (!eventToServices.containsKey(e.getClass())) {
+			synchronized (eventToServices) {
+				while (!eventToServices.containsKey(e.getClass())) {
+					try {
+						broadcastToService.wait();
+					} catch (InterruptedException ex) {
+					}
+				}
+			}
 		}
-		else{
-			synchronized (eventToNextMs.get(e.getClass())){
-				synchronized (eventToServices.get(e.getClass())){
+
+		synchronized (eventToNextMs.get(e.getClass())){
+			synchronized (eventToServices.get(e.getClass())){
+				if(!eventToServices.get(e.getClass()).isEmpty()){
 					MicroService lastMs = eventToNextMs.get(e.getClass());
 					Integer currInd = eventToServices.get(e.getClass()).indexOf(lastMs);
 					Integer nextInd = this.nextMsInd(eventToServices.get(e.getClass()).size(), currInd);
 					MicroService nextMs = eventToServices.get(e.getClass()).get(nextInd);
 					eventToNextMs.replace(e.getClass(), lastMs, nextMs);
-//					serviceToWorkQueue.get(nextMs).put(e); // TO CHECK
-					// also to check if notify all needed
+					synchronized (serviceToWorkQueue.get(nextMs)){
+						try{
+							serviceToWorkQueue.get(nextMs).put(e);
+						}catch(InterruptedException ex){}
+					}
+				}
+
+				else{
+					return null;
 				}
 			}
 		}
 
-
-
-		return null;
+		Future<T> future = new Future<T>();
+		return future;
 	}
 
 	@Override
@@ -173,8 +188,8 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		// TODO Auto-generated method stub
-		return null;
+		BlockingQueue<Message> mQueue = serviceToWorkQueue.get(m);
+		return mQueue.take();
 	}
 
 	public Integer nextMsInd (int listSize, Integer currInd){

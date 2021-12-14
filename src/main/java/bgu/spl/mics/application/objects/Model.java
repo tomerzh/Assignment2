@@ -20,6 +20,7 @@ public class Model {
     private Student student;
     private Status status;
     private Results results;
+    private Boolean publish;
 
     public Model(Student student, String name, Data.Type type, int size){
         this.student = student;
@@ -27,6 +28,7 @@ public class Model {
         data = new Data(type, size);
         status = Status.PreTrained;
         results = Results.None;
+        publish = false;
     }
 
     public String getName() {
@@ -48,6 +50,10 @@ public class Model {
 
     public void setResults(Results results) {
         this.results = results;
+    }
+
+    public void setPublish(){
+        this.publish = true;
     }
 
 
