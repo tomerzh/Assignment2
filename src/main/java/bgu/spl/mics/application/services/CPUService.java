@@ -1,6 +1,7 @@
 package bgu.spl.mics.application.services;
 
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.CPU;
 
@@ -30,6 +31,11 @@ public class CPUService extends MicroService {
                     cpu.pushProcessedData();
                 }
             }
+        });
+
+        subscribeBroadcast(TerminateBroadcast.class, terminate->{
+            terminate();
+            System.out.println("CPU terminated!");
         });
     }
 }

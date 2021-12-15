@@ -3,6 +3,7 @@ package bgu.spl.mics.application.services;
 import bgu.spl.mics.Callback;
 import bgu.spl.mics.Event;
 import bgu.spl.mics.MicroService;
+import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.messages.TestModelEvent;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.messages.TrainModelEvent;
@@ -112,6 +113,11 @@ public class GPUService extends MicroService {
                     callback.call(trainModel);
                 }
             }
+        });
+
+        subscribeBroadcast(TerminateBroadcast.class, terminate->{
+            terminate();
+            System.out.println("GPU terminated!");
         });
     }
 }
