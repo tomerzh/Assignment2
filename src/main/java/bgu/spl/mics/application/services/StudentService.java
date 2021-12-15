@@ -36,6 +36,10 @@ public class StudentService extends MicroService {
 
     @Override
     protected void initialize() {
+        subscribeBroadcast(TerminateBroadcast.class, terminate->{
+            this.terminate();
+        });
+
         //PublishConferenceBroadcast callback
         subscribeBroadcast(PublishConferenceBroadcast.class, publishConference->{
             HashMap<Student, HashSet<Model>> publications = publishConference.getConference().getStudentToPublishedModels();
