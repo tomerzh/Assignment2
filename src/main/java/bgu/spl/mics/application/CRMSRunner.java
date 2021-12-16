@@ -58,7 +58,6 @@ public class CRMSRunner {
         studentThread.start();
 
         while(!gpuService.getInitialize() || !studentService.getInitialize() || !cpuService.getInitialize() || !conferenceService.getInitialize()){
-            System.out.println("Not all services are initialized.");
         }
 
         TimeService timeService = new TimeService("Timer", 1, 5500);
