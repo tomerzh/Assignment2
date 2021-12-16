@@ -37,6 +37,7 @@ public class ConferenceService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TerminateBroadcast.class, terminate->{
             this.terminate();
+            System.out.println("conference terminated!");
         });
 
         subscribeBroadcast(TickBroadcast.class, tick->{
