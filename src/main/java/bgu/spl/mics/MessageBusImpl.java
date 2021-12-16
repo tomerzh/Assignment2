@@ -1,10 +1,13 @@
 package bgu.spl.mics;
 
+import bgu.spl.mics.application.messages.PublishResultsEvent;
 import bgu.spl.mics.application.messages.TestModelEvent;
 import bgu.spl.mics.application.messages.TickBroadcast;
+import bgu.spl.mics.application.messages.TrainModelEvent;
 
 import java.util.*;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -19,18 +22,21 @@ public class MessageBusImpl implements MessageBus {
 		private static MessageBusImpl MessageBusInstance = new MessageBusImpl();
 	}
 
-	private HashMap<Class<? extends Event>, LinkedList<MicroService>> eventToServices;
-	private HashMap<Class<? extends Broadcast>, HashSet<MicroService>> broadcastToService;
-	private HashMap<MicroService, BlockingQueue<Message>> serviceToWorkQueue;
+	private HashMap<Class<? extends Event>, List<MicroService>> eventToServices;
+	private HashMap<Class<? extends Broadcast>, Set<MicroService>> broadcastToService;
+	private HashMap<MicroService, Queue<Message>> serviceToWorkQueue;
 	private HashMap<Event<?>, Future<?>> eventToFuture;
 	private HashMap<Class<? extends Event>, MicroService> eventToNextMs;
 
 	private MessageBusImpl(){
-		eventToServices = new HashMap<Class<? extends Event>, LinkedList<MicroService>>();
-		broadcastToService = new HashMap<Class<? extends Broadcast>, HashSet<MicroService>>();
-		serviceToWorkQueue = new HashMap<MicroService, BlockingQueue<Message>>();
+		eventToServices = new HashMap<Class<? extends Event>, List<MicroService>>();
+		broadcastToService = new HashMap<Class<? extends Broadcast>, Set<MicroService>>();
+		serviceToWorkQueue = new HashMap<MicroService, Queue<Message>>();
 		eventToFuture = new HashMap<Event<?>, Future<?>>();
 		eventToNextMs = new HashMap<Class<? extends Event>, MicroService>();
+		eventToNextMs.put(TrainModelEvent.class, null);
+		eventToNextMs.put(TestModelEvent.class, null);
+		eventToNextMs.put(PublishResultsEvent.class, null);
 	}
 
 	public static MessageBusImpl getInstance() {
@@ -44,16 +50,14 @@ public class MessageBusImpl implements MessageBus {
 		if(!eventToServices.containsKey(type)){
 			synchronized (eventToServices){
 				if(!eventToServices.containsKey(type)){
-					LinkedList<MicroService> eventList = (LinkedList<MicroService>) Collections.synchronizedList(new LinkedList<MicroService>());
+					List<MicroService> eventList = Collections.synchronizedList(new LinkedList<MicroService>());
 					eventToServices.put(type, eventList);
-					broadcastToService.notifyAll();
 				}
 			}
 		}
 
 		synchronized (eventToServices.get(type)){
 			eventToServices.get(type).add(m);
-			eventToServices.get(type).notifyAll();
 		}
 	}
 
@@ -62,7 +66,7 @@ public class MessageBusImpl implements MessageBus {
 		if(!broadcastToService.containsKey(type)){
 			synchronized (broadcastToService){
 				if(!broadcastToService.containsKey(type)){
-					HashSet<MicroService> bcSet = (HashSet<MicroService>) Collections.synchronizedSet(new HashSet<MicroService>());
+					HashSet<MicroService> bcSet = new HashSet<MicroService>();
 					broadcastToService.put(type, bcSet);
 				}
 			}
@@ -70,7 +74,6 @@ public class MessageBusImpl implements MessageBus {
 
 		synchronized (broadcastToService.get(type)){
 			broadcastToService.get(type).add(m);
-			broadcastToService.get(type).notifyAll();
 		}
 	}
 
@@ -84,25 +87,14 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void sendBroadcast(Broadcast b) {
-		if (!broadcastToService.containsKey(b.getClass())) {
-			synchronized (broadcastToService) {
-				while (!broadcastToService.containsKey(b.getClass())) {
-					try {
-						broadcastToService.wait();
-					} catch (InterruptedException ex) {
+		synchronized (broadcastToService.get(b.getClass())) {
+			if(!broadcastToService.get(b.getClass()).isEmpty()){
+				for (MicroService mc : broadcastToService.get(b.getClass())) {
+					synchronized (serviceToWorkQueue.get(mc)){
+						serviceToWorkQueue.get(mc).add(b);
+						serviceToWorkQueue.get(mc).notifyAll();
 					}
 				}
-			}
-		}
-
-		synchronized (broadcastToService.get(b.getClass())) {
-			while (broadcastToService.get(b.getClass()).isEmpty()) {
-				try {
-					broadcastToService.get(b.getClass()).wait();
-				} catch (InterruptedException ex) {}
-			}
-			for (MicroService mc : broadcastToService.get(b.getClass())) {
-				serviceToWorkQueue.get(mc).add(b);
 			}
 		}
 	}
@@ -110,29 +102,26 @@ public class MessageBusImpl implements MessageBus {
 	
 	@Override
 	public <T> Future<T> sendEvent(Event<T> e) {
-		if (!eventToServices.containsKey(e.getClass())) {
-			synchronized (eventToServices) {
-				while (!eventToServices.containsKey(e.getClass())) {
-					try {
-						broadcastToService.wait();
-					} catch (InterruptedException ex) {
-					}
-				}
-			}
-		}
-
-		synchronized (eventToNextMs.get(e.getClass())){
+		synchronized (eventToNextMs){
 			synchronized (eventToServices.get(e.getClass())){
 				if(!eventToServices.get(e.getClass()).isEmpty()){
-					MicroService lastMs = eventToNextMs.get(e.getClass());
-					Integer currInd = eventToServices.get(e.getClass()).indexOf(lastMs);
-					Integer nextInd = this.nextMsInd(eventToServices.get(e.getClass()).size(), currInd);
-					MicroService nextMs = eventToServices.get(e.getClass()).get(nextInd);
-					eventToNextMs.replace(e.getClass(), lastMs, nextMs);
+					MicroService nextMs;
+					if(eventToNextMs.get(e.getClass()) == null){
+						nextMs = eventToServices.get(e.getClass()).get(0);
+						eventToNextMs.replace(e.getClass(), nextMs);
+					}
+
+					else{
+						MicroService lastMs = eventToNextMs.get(e.getClass());
+						Integer currInd = eventToServices.get(e.getClass()).indexOf(lastMs);
+						Integer nextInd = this.nextMsInd(eventToServices.get(e.getClass()).size(), currInd);
+						nextMs = eventToServices.get(e.getClass()).get(nextInd);
+						eventToNextMs.replace(e.getClass(), lastMs, nextMs);
+					}
+
 					synchronized (serviceToWorkQueue.get(nextMs)){
-						try{
-							serviceToWorkQueue.get(nextMs).put(e);
-						}catch(InterruptedException ex){}
+						serviceToWorkQueue.get(nextMs).add(e);
+						serviceToWorkQueue.get(nextMs).notifyAll();
 					}
 				}
 
@@ -143,12 +132,13 @@ public class MessageBusImpl implements MessageBus {
 		}
 
 		Future<T> future = new Future<T>();
+		eventToFuture.put(e, future);
 		return future;
 	}
 
 	@Override
 	public void register(MicroService m) {
-		LinkedBlockingQueue<Message> mWorkQueue = new LinkedBlockingQueue<Message>();
+		ConcurrentLinkedQueue<Message> mWorkQueue = new ConcurrentLinkedQueue<Message>();
 		synchronized (serviceToWorkQueue){
 			serviceToWorkQueue.put(m, mWorkQueue);
 		}
@@ -157,17 +147,18 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public void unregister(MicroService m) {
 		synchronized (serviceToWorkQueue.get(m)){
+			Queue<Message> myQueue = serviceToWorkQueue.get(m);
 			//remove ms from event lists
 			synchronized (eventToServices){
-				for(LinkedList<MicroService> eventList : eventToServices.values()){
+				for(List<MicroService> eventList : eventToServices.values()){
 					if(eventList.contains(m)){
 						eventList.remove(m);
 					}
 				}
 			}
-			//remove ms from event sets
+			//remove ms from broadcast sets
 			synchronized (broadcastToService){
-				for(HashSet<MicroService> bcSet : broadcastToService.values()){
+				for(Set<MicroService> bcSet : broadcastToService.values()){
 					if(bcSet.contains(m)){
 						bcSet.remove(m);
 					}
@@ -176,20 +167,28 @@ public class MessageBusImpl implements MessageBus {
 
 			//sends back to messageBus remain messages
 			for(Message ms : serviceToWorkQueue.get(m)){
-				//to do - send back to bus the events
-				// also - need to delete the queue
+				if(ms.getClass() == TrainModelEvent.class || ms.getClass() == TestModelEvent.class
+						|| ms.getClass() == PublishResultsEvent.class){
+					m.sendEvent((Event<? extends Object>) ms);
+				}
 			}
-
-
+			//remove ms queue
+			synchronized (serviceToWorkQueue){
+				serviceToWorkQueue.remove(m, myQueue);
+			}
 		}
-
-
 	}
 
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		BlockingQueue<Message> mQueue = serviceToWorkQueue.get(m);
-		return mQueue.take();
+		Message newMs = null;
+		synchronized (serviceToWorkQueue.get(m)){
+			while (serviceToWorkQueue.get(m).isEmpty()){
+				serviceToWorkQueue.get(m).wait();
+			}
+			newMs = serviceToWorkQueue.get(m).remove();
+		}
+		return newMs;
 	}
 
 	public Integer nextMsInd (int listSize, Integer currInd){

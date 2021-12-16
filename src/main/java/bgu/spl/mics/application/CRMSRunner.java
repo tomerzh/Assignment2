@@ -36,7 +36,7 @@ public class CRMSRunner {
         ConfrenceInformation confrence = new ConfrenceInformation("ICML", 20000);
 
 
-        TimeService timeService = new TimeService("Timer", 1, 55000);
+//        TimeService timeService = new TimeService("Timer", 1, 55000);
         StudentService studentService = new StudentService(student.getName(), student);
         GPUService gpuService = new GPUService("GPU", gpu);
         CPUService cpuService = new CPUService("CPU", cpu);
@@ -46,12 +46,25 @@ public class CRMSRunner {
         Thread gpuThread = new Thread(gpuService);
         Thread cpuThread = new Thread(cpuService);
         Thread conferenceThread = new Thread(conferenceService);
-        Thread timeThread = new Thread(timeService);
+//        Thread timeThread = new Thread(timeService);
 
         gpuThread.start();
         cpuThread.start();
         conferenceThread.start();
         studentThread.start();
+
+        while(!gpuService.getInitialize()){
+            while (!studentService.getInitialize()){
+                while (!cpuService.getInitialize()){
+                    while (!conferenceService.getInitialize()){
+
+                    }
+                }
+            }
+        }
+
+        TimeService timeService = new TimeService("Timer", 1, 5500);
+        Thread timeThread = new Thread(timeService);
         timeThread.start();
     }
 }

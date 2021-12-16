@@ -23,7 +23,7 @@ public class Student {
     private LinkedList<Model> models;
     private int publications;
     private int papersRead;
-    private ListIterator<Model> modelItr;
+    private int nextModelInd;
 
     public Student(String name, String department, Degree status, LinkedList<Model> models){
         this.name = name;
@@ -32,12 +32,13 @@ public class Student {
         this.models = models;
         this.publications = 0;
         this.papersRead = 0;
-        modelItr = models.listIterator();
+        nextModelInd = 0;
     }
 
     public Model nextModelToTrain(){
-        if(modelItr.hasNext()){
-            return modelItr.next();
+        if(nextModelInd < models.size() - 1){
+            nextModelInd = nextModelInd + 1;
+            return models.get(nextModelInd);
         }
         return null;
     }

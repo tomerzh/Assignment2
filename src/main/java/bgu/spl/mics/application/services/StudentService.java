@@ -62,6 +62,7 @@ public class StudentService extends MicroService {
         //TickBroadcast callback
         subscribeBroadcast(TickBroadcast.class, tick->{
             if(currEvent == null){
+                System.out.println("training started");
                 Model newModelToTrain = student.nextModelToTrain();
                 if(newModelToTrain != null){
                     Event<Model> newTrainModelEvent = new TrainModelEvent(newModelToTrain);
@@ -72,6 +73,7 @@ public class StudentService extends MicroService {
 
             else if(currEvent.getClass() == TrainModelEvent.class){
                 if(currFuture.isDone()){
+                    System.out.println("testing started");
                     Model trainedModel = currFuture.get();
                     Event<Model> newTestModelEvent = new TestModelEvent(student,trainedModel);
                     currEvent = newTestModelEvent;
@@ -81,8 +83,10 @@ public class StudentService extends MicroService {
 
             else if(currEvent.getClass() == TestModelEvent.class){
                 if(currFuture.isDone()){
+                    System.out.println("testing finished");
                     Model testedModel = currFuture.get();
                     if(testedModel.getResults() == Model.Results.Good){
+                        System.out.println("model is good, send to publish");
                         Event<Model> publishResult = new PublishResultsEvent(student, testedModel);
                         currFuture = this.sendEvent(publishResult);
                     }
