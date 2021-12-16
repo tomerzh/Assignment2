@@ -66,6 +66,7 @@ public class CPU {
      * pulling new unprocessed data batch from the cluster to the cpu to process
      */
     public void fetchUnprocessedData(){
+        System.out.println("CPU fetched data!!!");
         currDataProcessing = cluster.dataBatchToCpu();
         currDataStartTime = totalTimeTicks;
         availableToProcess = false;
