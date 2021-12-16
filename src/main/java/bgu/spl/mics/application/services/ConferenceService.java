@@ -44,7 +44,7 @@ public class ConferenceService extends MicroService {
             if(currTime == conference.getDate()){
                 PublishConferenceBroadcast publishBroadcast = new PublishConferenceBroadcast(conference);
                 this.sendBroadcast(publishBroadcast);
-                MessageBusImpl.getInstance().unregister(this);
+                this.terminate();
             }
         });
 
