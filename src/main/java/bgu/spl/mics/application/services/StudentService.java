@@ -38,6 +38,7 @@ public class StudentService extends MicroService {
     protected void initialize() {
         subscribeBroadcast(TerminateBroadcast.class, terminate->{
             this.terminate();
+            System.out.println("Student terminated!");
         });
 
         //PublishConferenceBroadcast callback
@@ -62,12 +63,16 @@ public class StudentService extends MicroService {
         //TickBroadcast callback
         subscribeBroadcast(TickBroadcast.class, tick->{
             if(currEvent == null){
-                System.out.println("training started");
                 Model newModelToTrain = student.nextModelToTrain();
+                Event<Model> newTrainModelEvent = new TrainModelEvent(newModelToTrain);
+                currEvent = newTrainModelEvent;
+                currFuture = this.sendEvent(newTrainModelEvent);
+                System.out.println("training started");
                 if(newModelToTrain != null){
-                    Event<Model> newTrainModelEvent = new TrainModelEvent(newModelToTrain);
-                    currEvent = newTrainModelEvent;
-                    currFuture = this.sendEvent(newTrainModelEvent);
+                    if(currFuture.isDone()){
+
+                    }
+
                 }
             }
 

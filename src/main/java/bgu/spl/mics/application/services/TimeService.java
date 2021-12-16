@@ -32,7 +32,6 @@ public class TimeService extends MicroService{
 			@Override
 			public void run() {
 				sendBroadcast(new TickBroadcast());
-				System.out.println("tick Sent");
 			}
 		};
 
@@ -44,6 +43,7 @@ public class TimeService extends MicroService{
 		subscribeBroadcast(TerminateBroadcast.class, terminate ->{
 			timer.cancel();
 			terminate();
+			System.out.println("Timer terminated!");
 		});
 
 		subscribeBroadcast(TickBroadcast.class, tick->{

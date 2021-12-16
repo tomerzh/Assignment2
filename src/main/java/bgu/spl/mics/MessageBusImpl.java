@@ -121,6 +121,7 @@ public class MessageBusImpl implements MessageBus {
 
 					synchronized (serviceToWorkQueue.get(nextMs)){
 						serviceToWorkQueue.get(nextMs).add(e);
+						System.out.println("An event added.");
 						serviceToWorkQueue.get(nextMs).notifyAll();
 					}
 				}

@@ -43,9 +43,13 @@ public class CRMSRunner {
         ConferenceService conferenceService = new ConferenceService(confrence.getName(), confrence);
 
         Thread studentThread = new Thread(studentService);
+        studentThread.setName("studentThread");
         Thread gpuThread = new Thread(gpuService);
+        gpuThread.setName("gpuThread");
         Thread cpuThread = new Thread(cpuService);
+        cpuThread.setName("cpuThread");
         Thread conferenceThread = new Thread(conferenceService);
+        conferenceThread.setName("conferenceThread");
 //        Thread timeThread = new Thread(timeService);
 
         gpuThread.start();
@@ -53,18 +57,23 @@ public class CRMSRunner {
         conferenceThread.start();
         studentThread.start();
 
-        while(!gpuService.getInitialize()){
-            while (!studentService.getInitialize()){
-                while (!cpuService.getInitialize()){
-                    while (!conferenceService.getInitialize()){
-
-                    }
-                }
-            }
+        while(!gpuService.getInitialize() || !studentService.getInitialize() || !cpuService.getInitialize() || !conferenceService.getInitialize()){
+            System.out.println("Not all services are initialized.");
         }
 
         TimeService timeService = new TimeService("Timer", 1, 5500);
         Thread timeThread = new Thread(timeService);
+        timeThread.setName("timeThread");
         timeThread.start();
+
+        try{
+            gpuThread.join();
+            cpuThread.join();
+            conferenceThread.join();
+            studentThread.join();
+            timeThread.join();
+        } catch (InterruptedException e) {}
+
+        System.out.println("Finished!!!");
     }
 }
