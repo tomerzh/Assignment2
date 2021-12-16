@@ -172,6 +172,7 @@ public abstract class MicroService implements Runnable {
                 }
             }catch (InterruptedException exception){}
         }
+        bus.unregister(this);
     }
 
     public void doneInitialize() {
