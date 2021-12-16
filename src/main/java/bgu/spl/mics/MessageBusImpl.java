@@ -90,10 +90,9 @@ public class MessageBusImpl implements MessageBus {
 		synchronized (broadcastToService.get(b.getClass())) {
 			if(!broadcastToService.get(b.getClass()).isEmpty()){
 				for (MicroService mc : broadcastToService.get(b.getClass())) {
-					synchronized (serviceToWorkQueue.get(mc)){
-						serviceToWorkQueue.get(mc).add(b);
-						serviceToWorkQueue.get(mc).notifyAll();
-					}
+					try{
+						serviceToWorkQueue.get(mc).put(b);
+					}catch(InterruptedException ex){}
 				}
 			}
 		}
@@ -118,13 +117,11 @@ public class MessageBusImpl implements MessageBus {
 						nextMs = eventToServices.get(e.getClass()).get(nextInd);
 						eventToNextMs.replace(e.getClass(), lastMs, nextMs);
 					}
-
-					synchronized (serviceToWorkQueue.get(nextMs)){
-						serviceToWorkQueue.get(nextMs).add(e);
+					try{
+						serviceToWorkQueue.get(nextMs).put(e);
 						System.out.println("An event added.");
-						serviceToWorkQueue.get(nextMs).notifyAll();
-					}
-				}
+					}catch(InterruptedException ex){}
+			}
 
 				else{
 					return null;
@@ -183,12 +180,9 @@ public class MessageBusImpl implements MessageBus {
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
 		Message newMs;
-//		synchronized (serviceToWorkQueue.get(m)){
-//			while (serviceToWorkQueue.get(m).isEmpty()){
-//				serviceToWorkQueue.get(m).wait();
-//			}
-		newMs = serviceToWorkQueue.get(m).take();
-//		}
+		synchronized (serviceToWorkQueue.get(m)){
+			newMs = serviceToWorkQueue.get(m).take();
+		}
 		return newMs;
 	}
 
