@@ -64,15 +64,10 @@ public class StudentService extends MicroService {
         subscribeBroadcast(TickBroadcast.class, tick->{
             if(currEvent == null){
                 Model newModelToTrain = student.nextModelToTrain();
-                Event<Model> newTrainModelEvent = new TrainModelEvent(newModelToTrain);
-                currEvent = newTrainModelEvent;
-                currFuture = this.sendEvent(newTrainModelEvent);
-                System.out.println("training started");
                 if(newModelToTrain != null){
-                    if(currFuture.isDone()){
-
-                    }
-
+                    System.out.println("training started");
+                    currEvent = new TrainModelEvent(newModelToTrain);
+                    currFuture = this.sendEvent(currEvent);
                 }
             }
 
@@ -82,7 +77,7 @@ public class StudentService extends MicroService {
                     Model trainedModel = currFuture.get();
                     Event<Model> newTestModelEvent = new TestModelEvent(student,trainedModel);
                     currEvent = newTestModelEvent;
-                    currFuture = this.sendEvent(newTestModelEvent);
+                    currFuture = sendEvent(newTestModelEvent);
                 }
             }
 
