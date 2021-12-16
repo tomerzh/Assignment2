@@ -24,14 +24,14 @@ public class MessageBusImpl implements MessageBus {
 
 	private HashMap<Class<? extends Event>, List<MicroService>> eventToServices;
 	private HashMap<Class<? extends Broadcast>, Set<MicroService>> broadcastToService;
-	private HashMap<MicroService, Queue<Message>> serviceToWorkQueue;
+	private HashMap<MicroService, BlockingQueue<Message>> serviceToWorkQueue;
 	private HashMap<Event<?>, Future<?>> eventToFuture;
 	private HashMap<Class<? extends Event>, MicroService> eventToNextMs;
 
 	private MessageBusImpl(){
 		eventToServices = new HashMap<Class<? extends Event>, List<MicroService>>();
 		broadcastToService = new HashMap<Class<? extends Broadcast>, Set<MicroService>>();
-		serviceToWorkQueue = new HashMap<MicroService, Queue<Message>>();
+		serviceToWorkQueue = new HashMap<MicroService, BlockingQueue<Message>>();
 		eventToFuture = new HashMap<Event<?>, Future<?>>();
 		eventToNextMs = new HashMap<Class<? extends Event>, MicroService>();
 		eventToNextMs.put(TrainModelEvent.class, null);
@@ -139,7 +139,7 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public void register(MicroService m) {
-		ConcurrentLinkedQueue<Message> mWorkQueue = new ConcurrentLinkedQueue<Message>();
+		LinkedBlockingQueue<Message> mWorkQueue = new LinkedBlockingQueue<>();
 		synchronized (serviceToWorkQueue){
 			serviceToWorkQueue.put(m, mWorkQueue);
 		}
@@ -182,13 +182,13 @@ public class MessageBusImpl implements MessageBus {
 
 	@Override
 	public Message awaitMessage(MicroService m) throws InterruptedException {
-		Message newMs = null;
-		synchronized (serviceToWorkQueue.get(m)){
-			while (serviceToWorkQueue.get(m).isEmpty()){
-				serviceToWorkQueue.get(m).wait();
-			}
-			newMs = serviceToWorkQueue.get(m).remove();
-		}
+		Message newMs;
+//		synchronized (serviceToWorkQueue.get(m)){
+//			while (serviceToWorkQueue.get(m).isEmpty()){
+//				serviceToWorkQueue.get(m).wait();
+//			}
+		newMs = serviceToWorkQueue.get(m).take();
+//		}
 		return newMs;
 	}
 

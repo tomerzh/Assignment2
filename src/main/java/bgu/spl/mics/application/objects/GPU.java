@@ -196,7 +196,6 @@ public class GPU {
     public void pushDataToProcess(){
         if(!isUnProcessedDataEmpty()){
             cluster.sendDataFromGpu(unProcessedData.remove());
-            System.out.println("GPU pushed data!");
         }
     }
 
