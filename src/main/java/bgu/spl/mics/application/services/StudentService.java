@@ -26,12 +26,21 @@ public class StudentService extends MicroService {
     Student student;
     Event currEvent;
     Future<Model> currFuture;
+    private  boolean initialized = false;
 
     public StudentService(String name, Student student) {
         super(student.getName());
         this.student = student;
         currEvent = null;
         currFuture = null;
+    }
+
+    public void doneInitialize() {
+        this.initialized = true;
+    }
+
+    public boolean getInitialize(){
+        return initialized;
     }
 
     @Override
@@ -95,5 +104,7 @@ public class StudentService extends MicroService {
                 }
             }
         });
+
+        doneInitialize();
     }
 }

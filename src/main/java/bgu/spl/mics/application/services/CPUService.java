@@ -14,9 +14,19 @@ import bgu.spl.mics.application.objects.CPU;
  */
 public class CPUService extends MicroService {
     private final CPU cpu;
+    private  boolean initialized = false;
+
     public CPUService(String name, CPU cpu) {
         super(name);
         this.cpu = cpu;
+    }
+
+    public void doneInitialize() {
+        this.initialized = true;
+    }
+
+    public boolean getInitialize(){
+        return initialized;
     }
 
     @Override
@@ -37,5 +47,7 @@ public class CPUService extends MicroService {
             terminate();
             System.out.println("CPU terminated!");
         });
+
+        doneInitialize();
     }
 }

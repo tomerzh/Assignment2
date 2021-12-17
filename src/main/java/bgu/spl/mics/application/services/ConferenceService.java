@@ -26,11 +26,20 @@ public class ConferenceService extends MicroService {
     String name;
     ConfrenceInformation conference;
     int currTime;
+    private  boolean initialized = false;
 
     public ConferenceService(String name, ConfrenceInformation conference) {
         super(name);
         this.conference = conference;
         currTime = 0;
+    }
+
+    public void doneInitialize() {
+        this.initialized = true;
+    }
+
+    public boolean getInitialize(){
+        return initialized;
     }
 
     @Override
@@ -43,8 +52,10 @@ public class ConferenceService extends MicroService {
         subscribeBroadcast(TickBroadcast.class, tick->{
             currTime = currTime + 1;
             if(currTime == conference.getDate()){
-                PublishConferenceBroadcast publishBroadcast = new PublishConferenceBroadcast(conference);
-                this.sendBroadcast(publishBroadcast);
+                if(!conference.getStudentToPublishedModels().isEmpty()){
+                    PublishConferenceBroadcast publishBroadcast = new PublishConferenceBroadcast(conference);
+                    this.sendBroadcast(publishBroadcast);
+                }
                 this.terminate();
             }
         });
@@ -55,6 +66,7 @@ public class ConferenceService extends MicroService {
             conference.addToPublishHash(student, model);
         });
 
+        doneInitialize();
 
     }
 }

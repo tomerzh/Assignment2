@@ -18,40 +18,60 @@ import java.util.TimerTask;
  */
 public class TimeService extends MicroService{
 
-	private int tickTime;
-	private int duration;
+	private long tickTime;
+	private long duration;
 	private int currTime = 1;
-	private Timer timer = new Timer();
-	private TimerTask timerTask;
+	private  boolean initialized = false;
 
-	public TimeService(String name, int tickTime, int duration) {
+	public TimeService(String name, long tickTime, long duration) {
 		super(name);
 		this.tickTime = tickTime;
 		this.duration = duration;
-		timerTask = new TimerTask() {
-			@Override
-			public void run() {
-				sendBroadcast(new TickBroadcast());
-			}
-		};
+	}
 
-		timer.scheduleAtFixedRate(timerTask, 0,tickTime);
+	public void doneInitialize() {
+		this.initialized = true;
+	}
+
+	public boolean getInitialize(){
+		return initialized;
 	}
 
 	@Override
 	protected void initialize() {
 		subscribeBroadcast(TerminateBroadcast.class, terminate ->{
-			timer.cancel();
 			terminate();
 			System.out.println("Timer terminated!");
 		});
 
-		subscribeBroadcast(TickBroadcast.class, tick->{
-			currTime = currTime + 1;
-			if(currTime == duration){
-				sendBroadcast(new TerminateBroadcast());
+		Timer timer = new Timer();
+
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				if(currTime < duration){
+					sendBroadcast(new TickBroadcast());
+					currTime++;
+					if(currTime%1000==0){
+						System.out.println("currTime is" + currTime);
+					}
+				}
+
+				else{
+					sendBroadcast(new TerminateBroadcast());
+					timer.cancel();
+				}
 			}
-		});
+		}, 0, tickTime);
+
+		doneInitialize();
+
+//		subscribeBroadcast(TickBroadcast.class, tick->{
+//			currTime = currTime + 1;
+//			if(currTime == duration){
+//				sendBroadcast(new TerminateBroadcast());
+//			}
+//		});
 
 
 //		subscribeBroadcast(TickBroadcast.class, tick->{

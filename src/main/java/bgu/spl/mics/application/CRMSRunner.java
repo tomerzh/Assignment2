@@ -60,7 +60,7 @@ public class CRMSRunner {
         while(!gpuService.getInitialize() || !studentService.getInitialize() || !cpuService.getInitialize() || !conferenceService.getInitialize()){
         }
 
-        TimeService timeService = new TimeService("Timer", 1, 5500);
+        TimeService timeService = new TimeService("Timer", 1, 55000);
         Thread timeThread = new Thread(timeService);
         timeThread.setName("timeThread");
         timeThread.start();

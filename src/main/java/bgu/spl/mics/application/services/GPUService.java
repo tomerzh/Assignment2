@@ -27,9 +27,20 @@ public class GPUService extends MicroService {
 
     private final GPU gpu;
     private Event<Model> currEvent;
+    private  boolean initialized = false;
     public GPUService(String name, GPU gpu) {
         super(name);
         this.gpu = gpu;
+    }
+
+
+
+    public void doneInitialize() {
+        this.initialized = true;
+    }
+
+    public boolean getInitialize(){
+        return initialized;
     }
 
     @Override
@@ -119,5 +130,7 @@ public class GPUService extends MicroService {
             terminate();
             System.out.println("GPU terminated!");
         });
+
+        doneInitialize();
     }
 }
