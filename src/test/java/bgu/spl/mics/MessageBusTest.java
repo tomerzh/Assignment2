@@ -27,7 +27,8 @@ public class MessageBusTest {
         event = new TestModelEvent(student, model);
         broadcast = new TickBroadcast();
         service = new GPUService("Test", gpu);
-        model = new Model(student, "Test", Data.Type.Images, 3000);
+        model = new Model( "Test", Data.Type.Images, 3000);
+        model.setStudent(student);
     }
 
     @After

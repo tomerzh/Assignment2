@@ -25,11 +25,11 @@ public class Student {
     private int papersRead;
     private int nextModelInd;
 
-    public Student(String name, String department, Degree status, LinkedList<Model> models){
+    public Student(String name, String department, Degree status){
         this.name = name;
         this.department = department;
         this.status = status;
-        this.models = models;
+        this.models = new LinkedList<>();
         this.publications = 0;
         this.papersRead = 0;
         nextModelInd = 0;
@@ -47,32 +47,20 @@ public class Student {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public String getDepartment() {
         return department;
-    }
-
-    public void setDepartment(String department) {
-        this.department = department;
     }
 
     public Degree getStatus() {
         return status;
     }
 
-    public void setStatus(Degree status) {
-        this.status = status;
-    }
-
     public LinkedList<Model> getModels() {
         return models;
     }
 
-    public void setModels(LinkedList<Model> models) {
-        this.models = models;
+    public void addModel(Model model) {
+        models.add(model);
     }
 
     public int getPublications() {

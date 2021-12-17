@@ -38,4 +38,13 @@ public class Data {
     public boolean isDataFinishedProcessing(){
         return processed==(size/1000);
     }
+
+    @Override
+    public String toString() {
+        return "Data{" +
+                "type=" + type +
+                ", processed=" + processed +
+                ", size=" + size +
+                '}';
+    }
 }

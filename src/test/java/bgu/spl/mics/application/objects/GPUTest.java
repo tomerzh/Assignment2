@@ -17,10 +17,10 @@ public class GPUTest {
     public void setUp() throws Exception {
         gpu = new GPU(GPU.Type.RTX3090);
         cluster = Cluster.getInstance();
-        LinkedList<Model> list = new LinkedList<Model>();
-        Student student = new Student("Simba", "Computer Science", Student.Degree.PhD, list);
-        model = new Model(student, "model1", Data.Type.Images, 1000);
-        list.add(model);
+        Student student = new Student("Simba", "Computer Science", Student.Degree.PhD);
+        model = new Model( "model1", Data.Type.Images, 1000);
+        model.setStudent(student);
+        student.addModel(model);
     }
 
     @After

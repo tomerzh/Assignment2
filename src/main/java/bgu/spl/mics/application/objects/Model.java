@@ -22,13 +22,20 @@ public class Model {
     private Results results;
     private Boolean publish;
 
-    public Model(Student student, String name, Data.Type type, int size){
-        this.student = student;
+    public Model(String name, Data.Type type, int size){
         this.name = name;
         data = new Data(type, size);
         status = Status.PreTrained;
         results = Results.None;
         publish = false;
+    }
+
+    public Student getStudent() {
+        return student;
+    }
+
+    public void setStudent(Student student) {
+        this.student = student;
     }
 
     public String getName() {
@@ -56,5 +63,12 @@ public class Model {
         this.publish = true;
     }
 
-
+    @Override
+    public String toString() {
+        return "Model{" +
+                "name='" + name + '\'' +
+                ", data=" + data +
+                ", status=" + status +
+                '}';
+    }
 }

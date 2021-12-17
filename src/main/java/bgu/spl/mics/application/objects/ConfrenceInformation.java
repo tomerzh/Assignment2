@@ -49,4 +49,12 @@ public class ConfrenceInformation {
         this.date = date;
     }
 
+    @Override
+    public String toString() {
+        return "ConfrenceInformation{" +
+                "name='" + name + '\'' +
+                ", date=" + date +
+                ", studentToPublishedModels=" + studentToPublishedModels +
+                '}';
+    }
 }

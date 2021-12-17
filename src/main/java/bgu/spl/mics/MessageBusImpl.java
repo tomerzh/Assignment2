@@ -128,10 +128,11 @@ public class MessageBusImpl implements MessageBus {
 				}
 			}
 		}
-
-		Future<T> future = new Future<T>();
-		eventToFuture.put(e, future);
-		return future;
+		synchronized (eventToFuture){
+			Future<T> future = new Future<T>();
+			eventToFuture.put(e, future);
+			return future;
+		}
 	}
 
 	@Override

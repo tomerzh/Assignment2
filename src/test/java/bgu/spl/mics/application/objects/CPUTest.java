@@ -22,7 +22,8 @@ public class CPUTest {
         cluster = Cluster.getInstance();
         cluster.addCpu(cpu);
         cluster.addGpu(gpu);
-        model = new Model(student, "Tomer", Data.Type.Images, 3000);
+        model = new Model("Tomer", Data.Type.Images, 3000);
+        model.setStudent(student);
         dataBatch = new DataBatch(model.getData(),0,gpu);
     }
 
