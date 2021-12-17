@@ -72,10 +72,10 @@ public class Future<T> {
      *         elapsed, return null.
      */
 	public T get(long timeout, TimeUnit unit) {
-		try{
-			unit.sleep(timeout);
-		}catch(InterruptedException ex){
-			return result;
+		if(result == null){
+			try{
+				this.wait(unit.toMillis(timeout));
+			}catch(InterruptedException ex){}
 		}
 		return result;
 	}

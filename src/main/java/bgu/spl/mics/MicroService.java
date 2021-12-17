@@ -22,7 +22,7 @@ import java.util.HashMap;
  */
 public abstract class MicroService implements Runnable {
 
-    private boolean terminated = false;
+    private volatile boolean terminated = false;
     private final String name;
     MessageBusImpl bus = MessageBusImpl.getInstance();
     protected HashMap<Class<? extends Message>, Callback<? extends Message>> messageToCallbacks;

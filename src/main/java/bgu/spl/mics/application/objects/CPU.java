@@ -67,6 +67,9 @@ public class CPU {
      */
     public void fetchUnprocessedData(){
         currDataProcessing = cluster.dataBatchToCpu();
+        if(currDataProcessing == null){
+            return;
+        }
         currDataStartTime = totalTimeTicks;
         availableToProcess = false;
         switch (currDataProcessing.getType()){

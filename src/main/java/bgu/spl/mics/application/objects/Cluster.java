@@ -29,7 +29,7 @@ public class Cluster {
 
 	private Cluster(){
 		unprocessedData = new LinkedBlockingQueue<>();
-		gpus = new HashMap<GPU, BlockingQueue<DataBatch>>();
+		gpus = new HashMap<>();
 		cpus = new LinkedList<>();
 		namesModelsTrained = new LinkedList<>();
 	}
@@ -73,7 +73,9 @@ public class Cluster {
 	}
 
 	public void sendDataFromGpu(DataBatch data){
-		unprocessedData.add(data);
+		try {
+			unprocessedData.put(data);
+		} catch (InterruptedException e) {}
 	}
 
 	public void sendDataFromCpu(DataBatch data){
@@ -83,8 +85,6 @@ public class Cluster {
 	}
 
 	public DataBatch dataBatchToCpu(){ //not sure about this
-		try{
-			return unprocessedData.take();
-		}catch (InterruptedException exception){return null;}
+		return unprocessedData.poll();
 	}
 }
