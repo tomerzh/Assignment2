@@ -18,6 +18,14 @@ public class JsonRead {
     public int TickTime;
     public int Duration;
 
+    public static JsonRead fromJsonStr(String jsonStr) {
+        GsonBuilder gsonBuilder = new GsonBuilder();
+        gsonBuilder.registerTypeAdapter(Model.class, new JsonRead.ModelDeserializer());
+        gsonBuilder.registerTypeAdapter(Student.class, new JsonRead.StudentDeserializer());
+        Gson gson = gsonBuilder.create();
+        return gson.fromJson(jsonStr, JsonRead.class);
+    }
+
     @Override
     public String toString() {
         return "JsonRead{" +
@@ -30,7 +38,7 @@ public class JsonRead {
                 '}';
     }
 
-    public static class ModelDeserializer implements JsonDeserializer<Model> {
+    static class ModelDeserializer implements JsonDeserializer<Model> {
 
         @Override
         public Model deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
@@ -43,7 +51,7 @@ public class JsonRead {
         }
     }
 
-    public static class StudentDeserializer implements JsonDeserializer<Student> {
+    static class StudentDeserializer implements JsonDeserializer<Student> {
 
         @Override
         public Student deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {

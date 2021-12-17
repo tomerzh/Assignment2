@@ -2,11 +2,10 @@ package bgu.spl.mics.application;
 
 import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.services.*;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 
-import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
@@ -19,26 +18,20 @@ import java.util.concurrent.Executors;
 public class CRMSRunner {
     public static void main(String[] args){
         JsonRead data = null;
+        Path path = Paths.get("example_input.json");
         try{
-            GsonBuilder gsonBuilder = new GsonBuilder();
-            gsonBuilder.registerTypeAdapter(Model.class, new JsonRead.ModelDeserializer());
-            gsonBuilder.registerTypeAdapter(Student.class, new JsonRead.StudentDeserializer());
-            Gson gson = gsonBuilder.create();
-            Reader reader = Files.newBufferedReader(Paths.get("example_input.json"));
-            data = gson.fromJson(reader,JsonRead.class);
-            reader.close();
+            String jsonStr = new String(
+                    Files.readAllBytes(path), StandardCharsets.UTF_8);
+            data = JsonRead.fromJsonStr(jsonStr);
         }catch (Exception ex){
-            System.out.println("Exception during parse json file");
+            System.out.println("Exception during read or parse json file: " + path.toAbsolutePath());
             ex.printStackTrace();
             System.exit(-1);
         }
-        runProgram(data);
-        //testLogic();
+        //runProgram(data);
+        testLogic();
         System.out.println("Finished!!!");
     }
-
-
-
 
     private static void runProgram(JsonRead data) {
         System.out.println(data);
