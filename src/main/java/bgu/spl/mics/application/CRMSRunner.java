@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -28,89 +29,132 @@ public class CRMSRunner {
             ex.printStackTrace();
             System.exit(-1);
         }
-        //runProgram(data);
-        testLogic();
+        runProgram(data);
+        //testLogic();
         System.out.println("Finished!!!");
     }
 
     private static void runProgram(JsonRead data) {
-        System.out.println(data);
+        ExecutorService threadPool = Executors.newCachedThreadPool();
+        int numberOfMicroservices = data.Students.size() + data.CPUS.length +
+                                    data.GPUS.length + data.Conferences.size() + 1;
+        CountDownLatch initSynchronizer = new CountDownLatch(numberOfMicroservices);
+        CountDownLatch terminateSynchronizer = new CountDownLatch(numberOfMicroservices);
 
         ArrayList<GPUService> gpus = new ArrayList<>();
         for (String gpuType : data.GPUS) {
             GPU gpu = new GPU(GPU.Type.valueOf(gpuType));
-            gpus.add(new GPUService("GPUService", gpu));
+            Cluster.getInstance().addGpu(gpu);
+            GPUService gpuService = new GPUService("GPUService", gpu);
+            gpuService.setInitSynchronizer(initSynchronizer);
+            gpuService.setTerminateSynchronizer(terminateSynchronizer);
+            gpus.add(gpuService);
+            threadPool.submit(gpuService);
         }
 
         ArrayList<CPUService> cpus = new ArrayList<>();
         for (int cpuCores : data.CPUS) {
             CPU cpu = new CPU(cpuCores);
-            cpus.add(new CPUService("CPUService", cpu));
+            Cluster.getInstance().addCpu(cpu);
+            CPUService cpuService = new CPUService("CPUService", cpu);
+            cpuService.setInitSynchronizer(initSynchronizer);
+            cpuService.setTerminateSynchronizer(terminateSynchronizer);
+            cpus.add(cpuService);
+            threadPool.submit(cpuService);
         }
 
         ArrayList<StudentService> students = new ArrayList<>();
         for (Student student : data.Students) {
-            students.add(new StudentService("StudentService", student));
+            StudentService studentService =
+                    new StudentService("StudentService", student);
+            studentService.setInitSynchronizer(initSynchronizer);
+            studentService.setTerminateSynchronizer(terminateSynchronizer);
+            students.add(studentService);
+            threadPool.submit(studentService);
         }
 
         ArrayList<ConferenceService> conferences = new ArrayList<>();
         for (ConfrenceInformation conference : data.Conferences) {
-            conferences.add(new ConferenceService("ConferenceService", conference));
+            ConferenceService conferenceService =
+                    new ConferenceService("ConferenceService", conference);
+            conferenceService.setInitSynchronizer(initSynchronizer);
+            conferenceService.setTerminateSynchronizer(terminateSynchronizer);
+            conferences.add(conferenceService);
+            threadPool.submit(conferenceService);
         }
 
         TimeService timeService = new TimeService("TimeService", data.TickTime, data.Duration);
+        timeService.setInitSynchronizer(initSynchronizer);
+        timeService.setTerminateSynchronizer(terminateSynchronizer);
+        threadPool.submit(timeService);
 
-        ExecutorService threadPool = Executors.newCachedThreadPool();
+        try {
+            terminateSynchronizer.await();
+        } catch (InterruptedException e) {}
+        threadPool.shutdown();
+        System.out.println("======================");
+        System.out.println("=========STUDENTS=============");
+        students.forEach(s -> System.out.println(s.getStudent()));
+        System.out.println("=========CONFERENCES=============");
+        conferences.forEach(c -> System.out.println(c.getConference()));
+        StringBuilder builder = new StringBuilder();
+        Cluster.getInstance().allModelsTrained(builder);
+        Cluster.getInstance().sumAllDataProcessedAndTimeUnits(builder);
+
 
     }
 
     private static void testLogic() {
-        Student student = new Student("Tomer", "Computer Science", Student.Degree.PhD);
-        Model model = new Model("model1", Data.Type.Images, 200000);
-        model.setStudent(student);
-        student.addModel(model);
-        GPU gpu = new GPU(GPU.Type.RTX3090);
-        CPU cpu = new CPU(32);
-        ConfrenceInformation confrence = new ConfrenceInformation("ICML", 20000);
-
-
-        StudentService studentService = new StudentService(student.getName(), student);
-        GPUService gpuService = new GPUService("GPU", gpu);
-        CPUService cpuService = new CPUService("CPU", cpu);
-        ConferenceService conferenceService = new ConferenceService(confrence.getName(), confrence);
-
-        Thread studentThread = new Thread(studentService);
-        studentThread.setName("studentThread");
-        Thread gpuThread = new Thread(gpuService);
-        gpuThread.setName("gpuThread");
-        Thread cpuThread = new Thread(cpuService);
-        cpuThread.setName("cpuThread");
-        Thread conferenceThread = new Thread(conferenceService);
-        conferenceThread.setName("conferenceThread");
+//        Student student = new Student("Tomer", "Computer Science", Student.Degree.PhD);
+//        Model model = new Model("model1", Data.Type.Images, 200000);
+//        model.setStudent(student);
+//        student.addModel(model);
+//        GPU gpu = new GPU(GPU.Type.RTX3090);
+//        CPU cpu = new CPU(32);
+//        ConfrenceInformation confrence = new ConfrenceInformation("ICML", 20000);
+//
+//
+//        StudentService studentService = new StudentService(student.getName(), student);
+//        GPUService gpuService = new GPUService("GPU", gpu);
+//        CPUService cpuService = new CPUService("CPU", cpu);
+//        ConferenceService conferenceService = new ConferenceService(confrence.getName(), confrence);
+//
+//        Thread studentThread = new Thread(studentService);
+//        studentThread.setName("studentThread");
+//        Thread gpuThread = new Thread(gpuService);
+//        gpuThread.setName("gpuThread");
+//        Thread cpuThread = new Thread(cpuService);
+//        cpuThread.setName("cpuThread");
+//        Thread conferenceThread = new Thread(conferenceService);
+//        conferenceThread.setName("conferenceThread");
+////        Thread timeThread = new Thread(timeService);
+//
+//        gpuThread.start();
+//        cpuThread.start();
+//        conferenceThread.start();
+//        studentThread.start();
+//
+//        while(!gpuService.getInitialize() || !studentService.getInitialize() || !cpuService.getInitialize() || !conferenceService.getInitialize()){
+//            try {
+//                Thread.sleep(100);
+//            } catch (InterruptedException e) {}
+//        }
+//
+//        TimeService timeService = new TimeService("Timer", 1, 550);
 //        Thread timeThread = new Thread(timeService);
-
-        gpuThread.start();
-        cpuThread.start();
-        conferenceThread.start();
-        studentThread.start();
-
-        while(!gpuService.getInitialize() || !studentService.getInitialize() || !cpuService.getInitialize() || !conferenceService.getInitialize()){
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException e) {}
-        }
-
-        TimeService timeService = new TimeService("Timer", 1, 550);
-        Thread timeThread = new Thread(timeService);
-        timeThread.setName("timeThread");
-        timeThread.start();
-
-        try{
-            gpuThread.join();
-            cpuThread.join();
-            conferenceThread.join();
-            studentThread.join();
-            timeThread.join();
-        } catch (InterruptedException e) {}
+//        timeThread.setName("timeThread");
+//        timeThread.start();
+//
+//        try{
+//            gpuThread.join();
+//            cpuThread.join();
+//            conferenceThread.join();
+//            studentThread.join();
+//            timeThread.join();
+//        } catch (InterruptedException e) {}
+//        System.out.println("======================");
+//        System.out.println(studentService.getStudent());
+//        System.out.println(conferenceService.getConference());
+//        Cluster.getInstance().sumAllDataProcessedAndTimeUnits();
     }
 }

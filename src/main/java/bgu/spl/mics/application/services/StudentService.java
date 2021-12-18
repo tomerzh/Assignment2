@@ -10,6 +10,7 @@ import com.sun.org.apache.xpath.internal.operations.Mod;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * Student is responsible for sending the {@link TrainModelEvent},
@@ -22,10 +23,12 @@ import java.util.HashSet;
  */
 public class StudentService extends MicroService {
 
-    String name;
-    Student student;
-    Event currEvent;
-    Future<Model> currFuture;
+    private String name;
+    private Student student;
+    private Event currEvent;
+    private Future<Model> currFuture;
+    private CountDownLatch initSynchronizer;
+    private CountDownLatch terminateSynchronizer;
     private  boolean initialized = false;
 
     public StudentService(String name, Student student) {
@@ -35,18 +38,37 @@ public class StudentService extends MicroService {
         currFuture = null;
     }
 
+    public Student getStudent() {
+        return student;
+    }
+
     public void doneInitialize() {
         this.initialized = true;
+        if (initSynchronizer != null) {
+            initSynchronizer.countDown();
+        }
     }
 
     public boolean getInitialize(){
         return initialized;
     }
 
+    public void setInitSynchronizer(CountDownLatch initSynchronizer) {
+        this.initSynchronizer = initSynchronizer;
+    }
+
+    public void setTerminateSynchronizer(CountDownLatch terminateSynchronizer) {
+        this.terminateSynchronizer = terminateSynchronizer;
+    }
+
     @Override
     protected void initialize() {
         subscribeBroadcast(TerminateBroadcast.class, terminate->{
             this.terminate();
+            if (terminateSynchronizer != null) {
+                terminateSynchronizer.countDown();
+                terminateSynchronizer = null;
+            }
             System.out.println("Student terminated!");
         });
 

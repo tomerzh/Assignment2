@@ -5,6 +5,8 @@ import bgu.spl.mics.application.messages.TerminateBroadcast;
 import bgu.spl.mics.application.messages.TickBroadcast;
 import bgu.spl.mics.application.objects.CPU;
 
+import java.util.concurrent.CountDownLatch;
+
 /**
  * CPU service is responsible for handling the {@link DataPreProcessEvent}.
  * This class may not hold references for objects which it is not responsible for.
@@ -14,6 +16,8 @@ import bgu.spl.mics.application.objects.CPU;
  */
 public class CPUService extends MicroService {
     private final CPU cpu;
+    private CountDownLatch initSynchronizer;
+    private CountDownLatch terminateSynchronizer;
     private  boolean initialized = false;
 
     public CPUService(String name, CPU cpu) {
@@ -21,12 +25,27 @@ public class CPUService extends MicroService {
         this.cpu = cpu;
     }
 
+    public CPU getCpu() {
+        return cpu;
+    }
+
     public void doneInitialize() {
         this.initialized = true;
+        if (initSynchronizer != null) {
+            initSynchronizer.countDown();
+        }
     }
 
     public boolean getInitialize(){
         return initialized;
+    }
+
+    public void setInitSynchronizer(CountDownLatch initSynchronizer) {
+        this.initSynchronizer = initSynchronizer;
+    }
+
+    public void setTerminateSynchronizer(CountDownLatch terminateSynchronizer) {
+        this.terminateSynchronizer = terminateSynchronizer;
     }
 
     @Override
@@ -45,6 +64,10 @@ public class CPUService extends MicroService {
 
         subscribeBroadcast(TerminateBroadcast.class, terminate->{
             terminate();
+            if (terminateSynchronizer != null) {
+                terminateSynchronizer.countDown();
+                terminateSynchronizer = null;
+            }
             System.out.println("CPU terminated!");
         });
 

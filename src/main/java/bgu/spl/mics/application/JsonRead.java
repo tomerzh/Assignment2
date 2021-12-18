@@ -22,6 +22,7 @@ public class JsonRead {
         GsonBuilder gsonBuilder = new GsonBuilder();
         gsonBuilder.registerTypeAdapter(Model.class, new JsonRead.ModelDeserializer());
         gsonBuilder.registerTypeAdapter(Student.class, new JsonRead.StudentDeserializer());
+        gsonBuilder.registerTypeAdapter(ConfrenceInformation.class, new JsonRead.ConferenceDeserializer());
         Gson gson = gsonBuilder.create();
         return gson.fromJson(jsonStr, JsonRead.class);
     }
@@ -68,6 +69,18 @@ public class JsonRead {
                 student.addModel(model);
             }
             return student;
+        }
+    }
+
+    static class ConferenceDeserializer implements JsonDeserializer<ConfrenceInformation> {
+
+        @Override
+        public ConfrenceInformation deserialize(JsonElement jsonElement, Type type, JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
+            JsonObject jsonObject = (JsonObject) jsonElement;
+            String name = jsonObject.get("name").getAsString();
+            int date = jsonObject.get("date").getAsInt();
+            ConfrenceInformation confrenceInformation = new ConfrenceInformation(name, date);
+            return confrenceInformation;
         }
     }
 }

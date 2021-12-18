@@ -59,7 +59,12 @@ public class Cluster {
 		}
 	}
 
-	public void sumAllDataProcessedAndTimeUnits(){
+	public void allModelsTrained(StringBuilder builder){
+		for (String model :	namesModelsTrained) {
+			builder.append(model);
+		}
+	}
+	public void sumAllDataProcessedAndTimeUnits(StringBuilder builder){
 		for (CPU cpu: cpus) {
 			totalDataProcessed = totalDataProcessed + cpu.getTotalDataProcessed();
 			cpuTimeUsed = cpuTimeUsed + cpu.getTimeUnitUsed();
@@ -68,8 +73,11 @@ public class Cluster {
 			gpuTimeUsed = gpuTimeUsed + gpu.getTimeUnitUsed();
 		}
 		System.out.println("Total data processed: " + totalDataProcessed);
+		builder.append(totalDataProcessed);
 		System.out.println("CPU times used: " + cpuTimeUsed);
+		builder.append(cpuTimeUsed);
 		System.out.println("GPU times used: " + gpuTimeUsed);
+		builder.append(gpuTimeUsed);
 	}
 
 	public void sendDataFromGpu(DataBatch data){

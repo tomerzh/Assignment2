@@ -18,12 +18,12 @@ public class ConfrenceInformation {
     public ConfrenceInformation(String name, int date){
         this.name = name;
         this.date = date;
-        studentToPublishedModels = new HashMap<Student, HashSet<Model>>();
+        studentToPublishedModels = new HashMap<>();
     }
 
     public void addToPublishHash(Student student, Model modelToAdd){
         if(!studentToPublishedModels.containsKey(student)){
-            studentToPublishedModels.put(student, new HashSet<Model>());
+            studentToPublishedModels.put(student, new HashSet<>());
         }
 
         studentToPublishedModels.get(student).add(modelToAdd);
@@ -54,7 +54,6 @@ public class ConfrenceInformation {
         return "ConfrenceInformation{" +
                 "name='" + name + '\'' +
                 ", date=" + date +
-                ", studentToPublishedModels=" + studentToPublishedModels +
                 '}';
     }
 }

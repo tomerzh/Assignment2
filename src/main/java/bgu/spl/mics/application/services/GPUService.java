@@ -13,6 +13,7 @@ import bgu.spl.mics.application.objects.Student;
 
 import java.awt.*;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * GPU service is responsible for handling the
@@ -27,20 +28,35 @@ public class GPUService extends MicroService {
 
     private final GPU gpu;
     private Event<Model> currEvent;
+    private CountDownLatch initSynchronizer;
+    private CountDownLatch terminateSynchronizer;
     private  boolean initialized = false;
     public GPUService(String name, GPU gpu) {
         super(name);
         this.gpu = gpu;
     }
 
-
+    public GPU getGpu() {
+        return gpu;
+    }
 
     public void doneInitialize() {
         this.initialized = true;
+        if (initSynchronizer != null) {
+            initSynchronizer.countDown();
+        }
     }
 
     public boolean getInitialize(){
         return initialized;
+    }
+
+    public void setInitSynchronizer(CountDownLatch initSynchronizer) {
+        this.initSynchronizer = initSynchronizer;
+    }
+
+    public void setTerminateSynchronizer(CountDownLatch terminateSynchronizer) {
+        this.terminateSynchronizer = terminateSynchronizer;
     }
 
     @Override
@@ -128,6 +144,10 @@ public class GPUService extends MicroService {
 
         subscribeBroadcast(TerminateBroadcast.class, terminate->{
             terminate();
+            if (terminateSynchronizer != null) {
+                terminateSynchronizer.countDown();
+                terminateSynchronizer = null;
+            }
             System.out.println("GPU terminated!");
         });
 

@@ -11,6 +11,8 @@ import bgu.spl.mics.application.objects.ConfrenceInformation;
 import bgu.spl.mics.application.objects.Model;
 import bgu.spl.mics.application.objects.Student;
 
+import java.util.concurrent.CountDownLatch;
+
 
 /**
  * Conference service is in charge of
@@ -23,9 +25,11 @@ import bgu.spl.mics.application.objects.Student;
  */
 public class ConferenceService extends MicroService {
 
-    String name;
-    ConfrenceInformation conference;
-    int currTime;
+    private String name;
+    private ConfrenceInformation conference;
+    private int currTime;
+    private CountDownLatch initSynchronizer;
+    private CountDownLatch terminateSynchronizer;
     private  boolean initialized = false;
 
     public ConferenceService(String name, ConfrenceInformation conference) {
@@ -34,18 +38,37 @@ public class ConferenceService extends MicroService {
         currTime = 0;
     }
 
+    public ConfrenceInformation getConference() {
+        return conference;
+    }
+
     public void doneInitialize() {
         this.initialized = true;
+        if (initSynchronizer != null) {
+            initSynchronizer.countDown();
+        }
     }
 
     public boolean getInitialize(){
         return initialized;
     }
 
+    public void setInitSynchronizer(CountDownLatch initSynchronizer) {
+        this.initSynchronizer = initSynchronizer;
+    }
+
+    public void setTerminateSynchronizer(CountDownLatch terminateSynchronizer) {
+        this.terminateSynchronizer = terminateSynchronizer;
+    }
+
     @Override
     protected void initialize() {
         subscribeBroadcast(TerminateBroadcast.class, terminate->{
             this.terminate();
+            if (terminateSynchronizer != null) {
+                terminateSynchronizer.countDown();
+                terminateSynchronizer = null;
+            }
             System.out.println("conference terminated!");
         });
 
@@ -57,6 +80,10 @@ public class ConferenceService extends MicroService {
                     this.sendBroadcast(publishBroadcast);
                 }
                 this.terminate();
+                if (terminateSynchronizer != null) {
+                    terminateSynchronizer.countDown();
+                    terminateSynchronizer = null;
+                }
             }
         });
 

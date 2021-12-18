@@ -6,6 +6,7 @@ import bgu.spl.mics.application.messages.TickBroadcast;
 
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.CountDownLatch;
 
 /**
  * TimeService is the global system timer There is only one instance of this micro-service.
@@ -21,6 +22,8 @@ public class TimeService extends MicroService{
 	private long tickTime;
 	private long duration;
 	private int currTime = 1;
+	private CountDownLatch initSynchronizer;
+	private CountDownLatch terminateSynchronizer;
 	private  boolean initialized = false;
 
 	public TimeService(String name, long tickTime, long duration) {
@@ -31,21 +34,40 @@ public class TimeService extends MicroService{
 
 	public void doneInitialize() {
 		this.initialized = true;
+		if (initSynchronizer != null) {
+			initSynchronizer.countDown();
+		}
 	}
 
 	public boolean getInitialize(){
 		return initialized;
 	}
 
+	public void setInitSynchronizer(CountDownLatch initSynchronizer) {
+		this.initSynchronizer = initSynchronizer;
+	}
+
+	public void setTerminateSynchronizer(CountDownLatch terminateSynchronizer) {
+		this.terminateSynchronizer = terminateSynchronizer;
+	}
+
 	@Override
 	protected void initialize() {
 		subscribeBroadcast(TerminateBroadcast.class, terminate ->{
 			terminate();
-			System.out.println("Timer terminated!");
+			if (terminateSynchronizer != null) {
+				terminateSynchronizer.countDown();
+				terminateSynchronizer = null;
+			}
 		});
 
-		Timer timer = new Timer();
+		doneInitialize();
 
+		try {
+			initSynchronizer.await();
+		} catch (InterruptedException e) {}
+
+		Timer timer = new Timer();
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -63,32 +85,5 @@ public class TimeService extends MicroService{
 				}
 			}
 		}, 0, tickTime);
-
-		doneInitialize();
-
-//		subscribeBroadcast(TickBroadcast.class, tick->{
-//			currTime = currTime + 1;
-//			if(currTime == duration){
-//				sendBroadcast(new TerminateBroadcast());
-//			}
-//		});
-
-
-//		subscribeBroadcast(TickBroadcast.class, tick->{
-//			currTime++;
-//			if(currTime == duration){
-//				sendBroadcast(new TerminateBroadcast());
-//			}
-//			else{
-//				try{
-//					Thread.sleep(tickTime);
-//					sendBroadcast(new TickBroadcast());
-//					System.out.println("tick was sent");
-//				}catch (InterruptedException exception){};
-//			}
-//		});
-//
-//		sendBroadcast(new TickBroadcast());
-
 	}
 }
