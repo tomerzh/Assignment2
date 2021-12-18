@@ -71,10 +71,12 @@ public class Future<T> {
      * 	       wait for {@code timeout} TimeUnits {@code unit}. If time has
      *         elapsed, return null.
      */
-	public T get(long timeout, TimeUnit unit) {
-		if(result == null){
+	public synchronized T get(long timeout, TimeUnit unit) {
+		long timeToWait = unit.toMillis(timeout);
+		long currTime = System.currentTimeMillis();
+		while(result == null && System.currentTimeMillis() - currTime < timeToWait){
 			try{
-				this.wait(unit.toMillis(timeout));
+				this.wait();
 			}catch(InterruptedException ex){}
 		}
 		return result;

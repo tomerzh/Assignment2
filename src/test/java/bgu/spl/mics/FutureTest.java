@@ -60,19 +60,19 @@ public class FutureTest {
     @Test
     public void testGet() {
         assertFalse(testFuture.isDone());
-        assertNull(testFuture.get(3000,TimeUnit.MILLISECONDS));
+        Boolean changed = false;
+//        assertNull(testFuture.get(1,TimeUnit.MILLISECONDS));
 
         Thread service = new Thread(()->{
            try{
-               Thread.currentThread().sleep(3000);
+               Thread.sleep(3000);
            }catch(InterruptedException ex){
                System.out.println(ex.getMessage());
            }
            testFuture.resolve("isDone");
         });
-
         service.start();
-        assertNull(testFuture.get(10,TimeUnit.MILLISECONDS));
-        assertEquals("isDone",testFuture.get(4000, TimeUnit.MILLISECONDS));
+//        assertNull(testFuture.get(1,TimeUnit.MILLISECONDS));
+        assertEquals("isDone",testFuture.get(1, TimeUnit.MILLISECONDS));
     }
 }

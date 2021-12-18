@@ -104,6 +104,7 @@ public class MessageBusImpl implements MessageBus {
     public <T> void complete(Event<T> e, T result) {
         Future future = eventToFuture.get(e);
         future.resolve(result);
+        //should be with notify all? because get future
     }
 
     @Override
