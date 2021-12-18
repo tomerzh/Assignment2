@@ -49,6 +49,22 @@ public class ConfrenceInformation {
         this.date = date;
     }
 
+    public void conferenceOutput(StringBuilder builder){
+        builder.append(System.lineSeparator());
+        builder.append("Conference: ").append("name='").append(name).append("',");
+        builder.append("date= ").append(date).append(System.lineSeparator());
+        HashSet<Model> publications = new HashSet<>();
+        studentToPublishedModels.values().forEach(publications::addAll);
+        builder.append("publications: ").append(System.lineSeparator());
+        if (!publications.isEmpty()) {
+            for (Model model : publications) {
+                builder.append("\t\t");
+                model.modelOutput(builder);
+                builder.append(System.lineSeparator());
+            }
+        }
+    }
+
     @Override
     public String toString() {
         return "ConfrenceInformation{" +

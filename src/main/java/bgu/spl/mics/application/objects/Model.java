@@ -20,7 +20,7 @@ public class Model {
     private Student student;
     private Status status;
     private Results results;
-    private Boolean publish;
+    private boolean publish;
 
     public Model(String name, Data.Type type, int size){
         this.name = name;
@@ -61,6 +61,29 @@ public class Model {
 
     public void setPublish(){
         this.publish = true;
+    }
+
+    public boolean isPublished() {
+        return publish;
+    }
+
+    private String getPublish(){
+        String str;
+        if(isPublished()){
+            str = "published";
+        }
+        else{
+            str = "not published";
+        }
+        return str;
+    }
+
+    public void modelOutput(StringBuilder builder){
+        builder.append("Model: ").append("name='").append(name).append("',");
+        builder.append("data type= ").append(data.getType()).append(",");
+        builder.append("data size= ").append(data.getSize()).append(",");
+        builder.append("status= ").append(status).append(",");
+        builder.append("results= ").append(results);
     }
 
     @Override

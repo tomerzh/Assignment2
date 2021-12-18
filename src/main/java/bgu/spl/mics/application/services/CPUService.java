@@ -68,7 +68,6 @@ public class CPUService extends MicroService {
                 terminateSynchronizer.countDown();
                 terminateSynchronizer = null;
             }
-            System.out.println("CPU terminated!");
         });
 
         doneInitialize();

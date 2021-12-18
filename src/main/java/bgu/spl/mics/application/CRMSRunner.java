@@ -3,41 +3,42 @@ package bgu.spl.mics.application;
 import bgu.spl.mics.application.objects.*;
 import bgu.spl.mics.application.services.*;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-/** This is the Main class of Compute Resources Management System application. You should parse the input file,
+/**
+ * This is the Main class of Compute Resources Management System application. You should parse the input file,
  * create the different instances of the objects, and run the system.
  * In the end, you should output a text file.
  */
 public class CRMSRunner {
-    public static void main(String[] args){
+    public static void main(String[] args) {
         JsonRead data = null;
         Path path = Paths.get("example_input.json");
-        try{
+        try {
             String jsonStr = new String(
                     Files.readAllBytes(path), StandardCharsets.UTF_8);
             data = JsonRead.fromJsonStr(jsonStr);
-        }catch (Exception ex){
+        } catch (Exception ex) {
             System.out.println("Exception during read or parse json file: " + path.toAbsolutePath());
             ex.printStackTrace();
             System.exit(-1);
         }
         runProgram(data);
-        //testLogic();
-        System.out.println("Finished!!!");
     }
 
     private static void runProgram(JsonRead data) {
         ExecutorService threadPool = Executors.newCachedThreadPool();
         int numberOfMicroservices = data.Students.size() + data.CPUS.length +
-                                    data.GPUS.length + data.Conferences.size() + 1;
+                data.GPUS.length + data.Conferences.size() + 1;
         CountDownLatch initSynchronizer = new CountDownLatch(numberOfMicroservices);
         CountDownLatch terminateSynchronizer = new CountDownLatch(numberOfMicroservices);
 
@@ -91,70 +92,25 @@ public class CRMSRunner {
         try {
             terminateSynchronizer.await();
         } catch (InterruptedException e) {}
+
         threadPool.shutdown();
-        System.out.println("======================");
-        System.out.println("=========STUDENTS=============");
-        students.forEach(s -> System.out.println(s.getStudent()));
-        System.out.println("=========CONFERENCES=============");
-        conferences.forEach(c -> System.out.println(c.getConference()));
+
         StringBuilder builder = new StringBuilder();
-        Cluster.getInstance().allModelsTrained(builder);
+        students.forEach(s -> s.getStudent().studentOutput(builder));
+        conferences.forEach(s -> s.getConference().conferenceOutput(builder));
         Cluster.getInstance().sumAllDataProcessedAndTimeUnits(builder);
-
-
+        writeResults(builder);
     }
 
-    private static void testLogic() {
-//        Student student = new Student("Tomer", "Computer Science", Student.Degree.PhD);
-//        Model model = new Model("model1", Data.Type.Images, 200000);
-//        model.setStudent(student);
-//        student.addModel(model);
-//        GPU gpu = new GPU(GPU.Type.RTX3090);
-//        CPU cpu = new CPU(32);
-//        ConfrenceInformation confrence = new ConfrenceInformation("ICML", 20000);
-//
-//
-//        StudentService studentService = new StudentService(student.getName(), student);
-//        GPUService gpuService = new GPUService("GPU", gpu);
-//        CPUService cpuService = new CPUService("CPU", cpu);
-//        ConferenceService conferenceService = new ConferenceService(confrence.getName(), confrence);
-//
-//        Thread studentThread = new Thread(studentService);
-//        studentThread.setName("studentThread");
-//        Thread gpuThread = new Thread(gpuService);
-//        gpuThread.setName("gpuThread");
-//        Thread cpuThread = new Thread(cpuService);
-//        cpuThread.setName("cpuThread");
-//        Thread conferenceThread = new Thread(conferenceService);
-//        conferenceThread.setName("conferenceThread");
-////        Thread timeThread = new Thread(timeService);
-//
-//        gpuThread.start();
-//        cpuThread.start();
-//        conferenceThread.start();
-//        studentThread.start();
-//
-//        while(!gpuService.getInitialize() || !studentService.getInitialize() || !cpuService.getInitialize() || !conferenceService.getInitialize()){
-//            try {
-//                Thread.sleep(100);
-//            } catch (InterruptedException e) {}
-//        }
-//
-//        TimeService timeService = new TimeService("Timer", 1, 550);
-//        Thread timeThread = new Thread(timeService);
-//        timeThread.setName("timeThread");
-//        timeThread.start();
-//
-//        try{
-//            gpuThread.join();
-//            cpuThread.join();
-//            conferenceThread.join();
-//            studentThread.join();
-//            timeThread.join();
-//        } catch (InterruptedException e) {}
-//        System.out.println("======================");
-//        System.out.println(studentService.getStudent());
-//        System.out.println(conferenceService.getConference());
-//        Cluster.getInstance().sumAllDataProcessedAndTimeUnits();
+    private static void writeResults(StringBuilder results) {
+        System.out.println(results.toString());
+        try {
+            Files.write(Paths.get("output.txt"),
+                    results.toString().getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.CREATE,
+                    StandardOpenOption.TRUNCATE_EXISTING);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }

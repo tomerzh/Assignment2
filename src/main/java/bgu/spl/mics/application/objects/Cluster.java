@@ -72,12 +72,9 @@ public class Cluster {
 		for (GPU gpu: gpus.keySet()) {
 			gpuTimeUsed = gpuTimeUsed + gpu.getTimeUnitUsed();
 		}
-		System.out.println("Total data processed: " + totalDataProcessed);
-		builder.append(totalDataProcessed);
-		System.out.println("CPU times used: " + cpuTimeUsed);
-		builder.append(cpuTimeUsed);
-		System.out.println("GPU times used: " + gpuTimeUsed);
-		builder.append(gpuTimeUsed);
+		builder.append(System.lineSeparator()).append("Total data processed: ").append(totalDataProcessed);
+		builder.append(System.lineSeparator()).append("CPU times used: ").append(cpuTimeUsed);
+		builder.append(System.lineSeparator()).append("GPU times used: ").append(gpuTimeUsed);
 	}
 
 	public void sendDataFromGpu(DataBatch data){

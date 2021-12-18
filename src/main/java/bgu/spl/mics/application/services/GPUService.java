@@ -148,9 +148,7 @@ public class GPUService extends MicroService {
                 terminateSynchronizer.countDown();
                 terminateSynchronizer = null;
             }
-            System.out.println("GPU terminated!");
         });
-
         doneInitialize();
     }
 }

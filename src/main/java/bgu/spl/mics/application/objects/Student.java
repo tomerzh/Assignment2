@@ -1,9 +1,6 @@
 package bgu.spl.mics.application.objects;
 
-import java.util.Collection;
 import java.util.LinkedList;
-import java.util.ListIterator;
-import java.util.Objects;
 
 /**
  * Passive object representing single student.
@@ -32,7 +29,7 @@ public class Student {
         this.models = new LinkedList<>();
         this.publications = 0;
         this.papersRead = 0;
-        nextModelInd = 0;
+        nextModelInd = -1;
     }
 
     public Model nextModelToTrain(){
@@ -86,6 +83,23 @@ public class Student {
         Student student = (Student) o;
         return name == student.name;
     }
+
+    public void studentOutput(StringBuilder builder){
+        builder.append(System.lineSeparator());
+        builder.append("Student: ").append("name='").append(name).append("',");
+        builder.append("department='").append(department).append("',");
+        builder.append("status=").append(status).append(",");
+        builder.append("publications= ").append(publications).append(",");
+        builder.append("papersRead= ").append(papersRead).append(System.lineSeparator());
+        builder.append("trainedModels: ").append(System.lineSeparator());
+        for (Model model : models) {
+            if (model.getStatus() == Model.Status.Trained || model.getStatus() == Model.Status.Tested) {
+                builder.append("\t\t");
+                model.modelOutput(builder);
+                builder.append(System.lineSeparator());
+            }
+        }
+     }
 
     @Override
     public String toString() {

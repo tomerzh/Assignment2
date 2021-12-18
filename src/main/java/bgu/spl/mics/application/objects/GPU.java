@@ -196,6 +196,7 @@ public class GPU {
     public void pushDataToProcess(){
         if(!isUnProcessedDataEmpty()){
             cluster.sendDataFromGpu(unProcessedData.remove());
+            numberOfBatchesAvailable--;
         }
     }
 
@@ -212,7 +213,6 @@ public class GPU {
     public void fetchProcessedData(){
         DataBatch dataBatch = cluster.getGpuQueue(this).remove();
         processedData.add(dataBatch);
-        numberOfBatchesAvailable--;
         if(!isProcessingDataBatch()){
             processDataBatch();
         }

@@ -60,7 +60,6 @@ public class TimeService extends MicroService{
 				terminateSynchronizer = null;
 			}
 		});
-
 		doneInitialize();
 
 		try {
@@ -74,9 +73,6 @@ public class TimeService extends MicroService{
 				if(currTime < duration){
 					sendBroadcast(new TickBroadcast());
 					currTime++;
-					if(currTime%1000==0){
-						System.out.println("currTime is" + currTime);
-					}
 				}
 
 				else{

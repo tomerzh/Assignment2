@@ -69,7 +69,6 @@ public class ConferenceService extends MicroService {
                 terminateSynchronizer.countDown();
                 terminateSynchronizer = null;
             }
-            System.out.println("conference terminated!");
         });
 
         subscribeBroadcast(TickBroadcast.class, tick->{
