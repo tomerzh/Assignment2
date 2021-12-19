@@ -21,8 +21,12 @@ import java.util.concurrent.Executors;
  */
 public class CRMSRunner {
     public static void main(String[] args) {
+        String fileName = "example_input.json";
+        if(args.length > 0){
+            fileName = args[0];
+        }
         JsonRead data = null;
-        Path path = Paths.get("example_input.json");
+        Path path = Paths.get(fileName);
         try {
             String jsonStr = new String(
                     Files.readAllBytes(path), StandardCharsets.UTF_8);
