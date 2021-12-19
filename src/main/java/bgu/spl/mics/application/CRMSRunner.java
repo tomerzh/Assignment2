@@ -103,7 +103,6 @@ public class CRMSRunner {
     }
 
     private static void writeResults(StringBuilder results) {
-        System.out.println(results.toString());
         try {
             Files.write(Paths.get("output.txt"),
                     results.toString().getBytes(StandardCharsets.UTF_8),
