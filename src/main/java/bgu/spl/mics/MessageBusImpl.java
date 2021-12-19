@@ -48,9 +48,6 @@ public class MessageBusImpl implements MessageBus {
 
     private void initRoundRobinInfo() {
         eventToNextMs = new ConcurrentHashMap<>();
-//        eventToNextMs.put(TrainModelEvent.class, new AtomicInteger(-1));
-//        eventToNextMs.put(TestModelEvent.class, new AtomicInteger(-1));
-//        eventToNextMs.put(PublishResultsEvent.class, new AtomicInteger(-1));
     }
 
 
@@ -62,18 +59,6 @@ public class MessageBusImpl implements MessageBus {
 
     @Override
     public <T> void subscribeEvent(Class<? extends Event<T>> type, MicroService m) {
-//		if(!eventToServices.containsKey(type)){
-//			synchronized (eventToServices){
-//				if(!eventToServices.containsKey(type)){
-//					List<MicroService> eventList = Collections.synchronizedList(new LinkedList<MicroService>());
-//					eventToServices.put(type, eventList);
-//				}
-//			}
-//		}
-//
-//		synchronized (eventToServices.get(type)){
-//			eventToServices.get(type).add(m);
-//		}
         List<MicroService> microServices = eventToServices.get(type);
         if (microServices != null) {
             microServices.add(m);
@@ -82,18 +67,6 @@ public class MessageBusImpl implements MessageBus {
 
     @Override
     public void subscribeBroadcast(Class<? extends Broadcast> type, MicroService m) {
-//		if(!broadcastToService.containsKey(type)){
-//			synchronized (broadcastToService){
-//				if(!broadcastToService.containsKey(type)){
-//					HashSet<MicroService> bcSet = new HashSet<>();
-//					broadcastToService.put(type, bcSet);
-//				}
-//			}
-//		}
-//
-//		synchronized (broadcastToService.get(type)){
-//			broadcastToService.get(type).add(m);
-//		}
         Set<MicroService> microServices = broadcastToService.get(type);
         if (microServices != null) {
             microServices.add(m);
@@ -104,7 +77,6 @@ public class MessageBusImpl implements MessageBus {
     public <T> void complete(Event<T> e, T result) {
         Future future = eventToFuture.get(e);
         future.resolve(result);
-        //should be with notify all? because get future
     }
 
     @Override
@@ -119,16 +91,6 @@ public class MessageBusImpl implements MessageBus {
             } catch (InterruptedException e) {
             }
         });
-//        synchronized (microServices) {
-//            if (!broadcastToService.get(b.getClass()).isEmpty()) {
-//                for (MicroService mc : broadcastToService.get(b.getClass())) {
-//                    try {
-//                        serviceToWorkQueue.get(mc).put(b);
-//                    } catch (InterruptedException ex) {
-//                    }
-//                }
-//            }
-//        }
     }
 
 
@@ -143,22 +105,9 @@ public class MessageBusImpl implements MessageBus {
                 ++i % microServices.size()
         );
         MicroService nextMs = microServices.get(serviceIndex);
-
-//        MicroService nextMs;
-//                if (eventToNextMs.get(e.getClass()) == null) {
-//                    nextMs = microServices.get(0);
-//                    eventToNextMs.put(e.getClass(), nextMs);
-//                } else {
-//                    MicroService lastMs = eventToNextMs.get(e.getClass());
-//                    Integer currInd = microServices.indexOf(lastMs);
-//                    Integer nextInd = this.nextMsInd(microServices.size(), currInd);
-//                    nextMs = microServices.get(nextInd);
-//                    eventToNextMs.replace(e.getClass(), lastMs, nextMs);
-//                }
         try {
             serviceToWorkQueue.get(nextMs).put(e);
-        } catch (InterruptedException ex) {
-        }
+        } catch (InterruptedException ex) {}
 
         Future<T> future = new Future<T>();
         eventToFuture.put(e, future);
@@ -184,60 +133,14 @@ public class MessageBusImpl implements MessageBus {
             }
         }
         mQueue.clear();
-
-//        synchronized (serviceToWorkQueue.get(m)) {
-//            Queue<Message> myQueue = serviceToWorkQueue.get(m);
-//            //remove ms from event lists
-//            synchronized (eventToServices) {
-//                for (List<MicroService> eventList : eventToServices.values()) {
-//                    if (eventList.contains(m)) {
-//                        eventList.remove(m);
-//                    }
-//                }
-//            }
-//            //remove ms from broadcast sets
-//            synchronized (broadcastToService) {
-//                for (Set<MicroService> bcSet : broadcastToService.values()) {
-//                    if (bcSet.contains(m)) {
-//                        bcSet.remove(m);
-//                    }
-//                }
-//            }
-//
-//            //sends back to messageBus remain messages
-//            for (Message ms : serviceToWorkQueue.get(m)) {
-//                if (ms.getClass() == TrainModelEvent.class || ms.getClass() == TestModelEvent.class
-//                        || ms.getClass() == PublishResultsEvent.class) {
-//                    m.sendEvent((Event<? extends Object>) ms);
-//                }
-//            }
-//            //remove ms queue
-//            synchronized (serviceToWorkQueue) {
-//                serviceToWorkQueue.remove(m, myQueue);
-//            }
-//        }
     }
 
     @Override
     public Message awaitMessage(MicroService m) throws InterruptedException {
         Message newMs;
-//		synchronized (serviceToWorkQueue.get(m)){
         newMs = serviceToWorkQueue.get(m).take();
-//		}
         return newMs;
     }
-
-//    public Integer nextMsInd(int listSize, Integer currInd) {
-//        Integer nextInd;
-//        if (listSize == currInd + 1) {
-//            nextInd = 0;
-//            return nextInd;
-//        }
-//        nextInd = currInd + 1;
-//        return nextInd;
-//    }
-
-    //"is it there?" added functions
 
     public boolean isSubscribeToEvent(Class<? extends Event> event, MicroService ms) {
         return this.eventToServices.get(event).contains(ms);

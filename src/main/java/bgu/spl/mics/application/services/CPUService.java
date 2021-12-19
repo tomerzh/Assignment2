@@ -69,7 +69,6 @@ public class CPUService extends MicroService {
                 terminateSynchronizer = null;
             }
         });
-
         doneInitialize();
     }
 }
