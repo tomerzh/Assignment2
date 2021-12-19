@@ -60,9 +60,7 @@ public class FutureTest {
     @Test
     public void testGet() {
         assertFalse(testFuture.isDone());
-        Boolean changed = false;
-//        assertNull(testFuture.get(1,TimeUnit.MILLISECONDS));
-
+//        assertNull(testFuture.get(10,TimeUnit.MILLISECONDS));
         Thread service = new Thread(()->{
            try{
                Thread.sleep(3000);
