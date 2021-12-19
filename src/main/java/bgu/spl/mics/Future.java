@@ -73,14 +73,10 @@ public class Future<T> {
      */
 	public synchronized T get(long timeout, TimeUnit unit) {
 		long timeToWait = unit.toMillis(timeout);
-		long startTime = System.currentTimeMillis();
-		long currTime = System.currentTimeMillis();
-		while(result == null && currTime - startTime < timeToWait){
+		if(!done){
 			try{
-				this.wait();
+				this.wait(timeToWait);
 			}catch(InterruptedException ex){}
-
-			currTime = System.currentTimeMillis();
 		}
 		return result;
 	}
